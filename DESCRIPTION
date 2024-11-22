@@ -2,11 +2,10 @@ Package: ODEinherit
 Title: Measuring regulatory network inheritance in dividing yeast cells using ordinary differential equations
 Version: 0.0.0.9000
 Authors@R: 
-    person("Wenbin", "Wu", , "drkwu999@gmail.com", role = c("aut", "cre"),
-    person("Wenbin", "Wu", , "drkwu999@gmail.com", role = "ctb")
+    person("Wenbin", "Wu", email = "drkwu999@gmail.com", role = c("aut", "cre"),
+    person("Kevin Z.", "Lin", role = "ctb")
 Description: Measuring regulatory network inheritance in dividing yeast cells using ordinary differential equations.
-
-License: use_gpl3_license()
+License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
