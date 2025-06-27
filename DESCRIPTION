@@ -8,6 +8,9 @@ Description: Measuring regulatory network inheritance in dividing yeast cells us
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 URL: https://github.com/WenbinWu2001/ODEinherit
 BugReports: https://github.com/WenbinWu2001/ODEinherit/issues
+Depends: 
+    R (>= 3.5)
+LazyData: true

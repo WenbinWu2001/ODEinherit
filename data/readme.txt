@@ -1,5 +1,7 @@
 # Cell Lineage Time Series Dataset
 
+*These data are also available in the R package and can be directly loaded with `data(cell_lineage_data)`.*
+
 This repository contains metadata and time series data for the mother-daughter cell pairs analyzed in our study.
 
 ## Metadata (`metadata.csv`)
