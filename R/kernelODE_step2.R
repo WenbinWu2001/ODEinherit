@@ -1,3 +1,25 @@
+#' Title
+#'
+#' @param Y
+#' @param obs_time
+#' @param yy_smth
+#' @param tt
+#' @param kernel
+#' @param kernel_params
+#' @param interaction_term
+#' @param theta_initial
+#' @param adj_matrix
+#' @param nzero_thres
+#' @param eval_edge_R2
+#' @param eval_loss
+#' @param tol
+#' @param max_iter
+#' @param verbose
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 kernelODE_step2 <- function(Y,
                             obs_time,
                             yy_smth,
@@ -12,8 +34,7 @@ kernelODE_step2 <- function(Y,
                             eval_loss = FALSE,
                             tol = 0.001,
                             max_iter = 10,
-                            verbose = 0,
-                            plot_theta_traj = FALSE){
+                            verbose = 0){
 
   ## kernel ODE Step 2: Iterative optimization algorithm (single sample version)
   # structure check of kernel_params
@@ -24,33 +45,6 @@ kernelODE_step2 <- function(Y,
 
   n <- nrow(Y)
   p <- ncol(Y)
-
-  # # ensure `Y` is centered
-  # Y <- scale(Y, center = TRUE, scale = FALSE)
-  # # DO NOT CENTER yy_smth!
-
-  # plot config
-  if (plot_theta_traj) {
-    graphics::par(mfrow = c(max_iter + 1, ifelse(interaction_term, p^2, p) + 1))
-
-    # print the label for each column (element of theta) corresponding to either a main effect of an interaction effect
-    # and its index in theta_j (so it corresponds to theta_j[index])
-    if (!interaction_term){
-      col_name_values <- paste0("main_", 1:p)
-    } else {
-      col_name_values <- outer(1:p, 1:p, paste, sep = "_")
-      col_name_values <- apply(col_name_values, c(1, 2), function(name) paste0("inter_", name))
-      diag(col_name_values) <- paste0("main_", 1:p)
-      col_name_values <- c(t(col_name_values))
-    }
-
-    graphics::plot(1, type='n', xlim=c(0, 1), ylim=c(0, 1), xlab='', ylab='', axes=FALSE)
-    for (col_name in col_name_values){
-      graphics::plot(1, type='n', xlim=c(0, 1), ylim=c(0, 1), xlab='', ylab='', axes=FALSE)
-      graphics::text(x=0.5, y=0.5, paste0(col_name, " (", which(col_name_values == col_name), ")"), cex=3)
-    }
-  }
-
 
   # recyclable quantities
   B <- .construct_B(obs_time)
@@ -117,10 +111,6 @@ kernelODE_step2 <- function(Y,
 
     # given F_j, estimate theta_j
     if (verbose > 0) {cat("-------- estimating theta_j's --------\n")}
-    if (plot_theta_traj){
-      graphics::plot(1, type='n', xlim=c(0, 1), ylim=c(0, 1), xlab='', ylab='', axes=FALSE)  # Create an empty plot
-      graphics::text(x=0.5, y=0.5, paste0("Iter ", num_iter), cex=3)  # Add text at the center of the plot
-    }
     for (j in 1:p){
       Yj <- Y[,j]
       bj <- res_bj[j]
@@ -140,8 +130,7 @@ kernelODE_step2 <- function(Y,
                                             interaction_term = interaction_term,
                                             Yj = Yj,
                                             adj_col = adj_col,
-                                            nzero_thres = nzero_thres,
-                                            plot_theta_traj = plot_theta_traj)
+                                            nzero_thres = nzero_thres)
       res_theta[,j] <- res_theta_j_est$theta_j
       res_best_kappa[j] <- res_theta_j_est$best_kappa
     }
@@ -196,9 +185,14 @@ kernelODE_step2 <- function(Y,
 
   if (verbose > 0) {cat("\n -------- finished -------- \n")}
 
-  # recover original plot config
-  if (plot_theta_traj) {graphics::par(mfrow = c(1,1))}
-
+  # obtain the regulatory network
+  if (!interaction_term) {  # without interaction
+    network_est <- ifelse(res_theta > 0, yes = 1, no = 0)
+  } else { # with interaction
+    # network for model with interaction, currently NOT supported
+    warning("network construction with interaction_term not supported. Returned a fully connected network.")
+    network_est <- matrix(1, nrow = p, ncol = p)
+  }
 
   res_step2 <- list(res_theta = res_theta,
                     res_best_kappa = res_best_kappa,
@@ -206,8 +200,8 @@ kernelODE_step2 <- function(Y,
                     res_cj = res_cj,
                     res_best_eta = res_best_eta,
                     res_loss_path = res_loss_path,
+                    network_est = network_est,
                     num_iter = num_iter,
-                    last_improvement = improvement,
                     config = list(adj_matrix = adj_matrix,
                                   interaction_term = interaction_term,
                                   kernel = kernel,

@@ -4,11 +4,11 @@ auto_select_kernel_params <- function(kernel, Y){
   # returns `kernel_params` as a list of p sublists, each sublist containing the kernel params for a variable.
   # if `kernel_params` only contains one list, then that kernel parameter is used for all variables.
   if (kernel == "gaussian"){
-    kernel_params <- compute_bw(Y)
+    kernel_params <- compute_bw_gaussian(Y)
   } else if (kernel == "linear"){
     kernel_params <- list(list())
   } else if (kernel == "polynomial") {
-    kernel_params <- list(list(intercept=1, degree=3))
+    kernel_params <- list(list(intercept=1, degree=3))  # cubic by default
   } else if (kernel == "matern") {
     kernel_params <- list(list(lengthscale=1))
   } else {

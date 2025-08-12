@@ -1,0 +1,241 @@
+---
+title: "ODEinherit"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ODEinherit}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Purpose
+
+This tutorial presents a toy example of ODEinherit using the dataset in our analysis in ![our paper](https://www.biorxiv.org/content/10.1101/2024.11.23.624995v2) to estimate the inheritance between mother and daughter cells. 
+
+A successful installation of `ODEinherit` is required for this. See the 
+last section of this article of all the system/package dependencies used when creating this tutorial.
+
+For a single pair of mother and daughter cells, this pipeline should complete in less than 15 minutes.
+
+# Overview
+
+Here we present the workflow for one mother-daughter cell pair. This is the cell pair used to create Figure 2 in the paper. See `?cell_lineage_data` for more details about the dataset.
+
+
+**Step 0: load the library and select a mother-daughter cell pair**
+
+```{r}
+rm(list = ls())
+
+set.seed(1)
+
+library(ODEinherit)
+
+# extract the data
+cell_lineage_data <- ODEinherit::cell_lineage_data
+names(cell_lineage_data)
+
+time_series <- cell_lineage_data$time_series
+metadata <- cell_lineage_data$metadata
+var_names <- names(time_series)
+```
+
+Following conventions, the time series are referred to as "trajectories". Simple code to plot the trajectories (note that in the plot in the paper, these trajectories are centered each to have mean 0)
+```{r}
+# extract trajectories by specifying cell id
+idx_M <- which(metadata$cell_id == "3-20-1")
+idx_D <- which(metadata$cell_id == "3-20-17")
+
+btp_idx_M <- metadata$cell_birth_timepoint[idx_M]  # index of birth time (corresponding to that of matrices in `time_series`)
+btp_idx_D <- metadata$cell_birth_timepoint[idx_D]
+
+Y_M <- sapply(time_series, function(mat){mat[idx_M,]})   # reshape the data
+Y_D <- sapply(time_series, function(mat){mat[idx_D,]})
+
+# dim(Y_M)  # (#time points, #variables)
+
+# plot the trajectories of the first variable
+var_idx <- 1
+yj_M <- Y_M[,var_idx]
+yj_D <- Y_D[,var_idx]
+
+time_grid <- 1:ncol(time_series[[1]])
+plot(NA, type = "n",
+     main = paste0("Trajectory plot of variable ", var_idx, " (", var_names[var_idx], ")"),
+     xlab = "Time index", ylab = "Value",
+     xlim = range(time_grid, na.rm = T), 
+     ylim = range(c(yj_M, yj_D), na.rm = T)
+     )
+lines(time_grid, yj_M, 
+      lty = 1, col = "darkred")
+lines(time_grid, yj_D, 
+      lty = 1, col = "darkgreen")
+legend("topright", 
+       legend = c("Mother", "Daughter"),
+       lty = 1,
+       col = c("darkred", "darkgreen"),
+       cex = 0.8)
+```
+
+
+**Step 1: network estimation by KernelODE**
+
+The procedure starts by assuming there there are two numeric matrices `Y_M` and `Y_D`, one for the mother cell and one for the daughter cell, with rows corresponding to time points and columns corresponding to protein variables. We estimate the ODE regulatory network for each cell *separately* using KernelODE. Before feeding into Kernel ODE, we first remove the portion of the trajectories before cell birth and then standardize their observation time points to [0,1] respectively. We also remove the linear trend in the time series to account for time trend effects.
+
+The first step of KODE obtains smoothing estimates for the trajectories using cubic smoothing splines. The second step of KODE estimates ODE regulatory networks under an RKHS modeling framework. Here we use a first-order Matern kernel. 
+See the original ![KernelODE paper](https://www.tandfonline.com/doi/full/10.1080/01621459.2021.1882466) for more details on the algorithm.
+
+```{r}
+# remove the portion before cell birth
+Y_M <- Y_M[btp_idx_M:nrow(Y_M),]
+Y_D <- Y_D[btp_idx_D:nrow(Y_D),]
+# Note that `Y_M` and `Y_D` have removed the portion before cell birth!
+
+# specify the observation time grid for each cell (standardized to [0,1] for each cell)
+n_M <- nrow(Y_M)
+obs_time_M <- 1/n_M * (1:n_M)
+n_D <- nrow(Y_D)
+obs_time_D <- 1/n_D * (1:n_D)
+
+# remove linear trend for each variable
+Y_M <- sapply(1:ncol(Y_M), function(j){
+  yj <- Y_M[,j]
+  temp <- lm(yj ~ obs_time_M)$fitted.values  # fitted linear trend
+  yj <- yj - temp  # remove linear trend
+  yj
+})
+
+Y_D <- sapply(1:ncol(Y_D), function(j){
+  yj <- Y_D[,j]
+  temp <- lm(yj ~ obs_time_D)$fitted.values  # fitted linear trend
+  yj <- yj - temp  # remove linear trend
+  yj
+})
+
+# specify KernelODE configuration
+kernel <- "matern"
+kernel_params <- list(list(lengthscale=1))  # recycled for all variables, used for both mother and daughter cells
+```
+
+Here we easily define a pipeline for network estimation:
+```{r}
+kernelODE_pipeline <- function(Y, 
+                               obs_time, 
+                               kernel, 
+                               kernel_params,
+                               prune_thres = 0.05,  # network pruning threshold
+                               depth = NULL  # maximum number of regulator edges to prune for each variable
+                               ){
+  tt <- 0.001*(1:1000)  # time grid for numerical integration, does not include 0
+  
+  # KernelODE step 1: smooth the observed trajectories
+  res_step1 <- ODEinherit::kernelODE_step1(Y = Y,
+                                           obs_time = obs_time,
+                                           tt = tt)
+  yy_smth <- res_step1$yy_smth
+  
+  # KernelODE step 2: estimate the derivative functions Fj's
+  res_step2 <- ODEinherit::kernelODE_step2(Y = Y,
+                                     obs_time = obs_time,
+                                     yy_smth = yy_smth,
+                                     tt = tt,
+                                     kernel = kernel,
+                                     kernel_params = kernel_params,
+                                     interaction_term = FALSE,  # without interaction
+                                     verbose = 0)
+  
+  network_est_original <- res_step2$network_est
+  
+  # prune the network
+  res_prune <- ODEinherit::prune_network(network_original = network_est_original,  # network to prune
+                                         prune_thres = prune_thres,
+                                         depth = depth,
+                                         Y_list = list(Y),  # here we prune it cellwise
+                                         yy_smth_list = list(yy_smth),  
+                                         obs_time_list = list(obs_time),
+                                         tt = tt,
+                                         kernel = kernel,
+                                         kernel_params_list = list(kernel_params),
+                                         interaction_term = FALSE,
+                                         verbose = 0)
+  
+  network_est_pruned <- res_prune$network_pruned
+  
+  return (list(network_est_pruned = network_est_pruned,
+               yy_smth = yy_smth,
+               tt = tt
+               ))
+}
+```
+
+Now we apply the pipeline for mother and daughter, respectively, to obtain their respective regulatory networks. This step is the most time consuming step.
+```{r}
+res_KernelODE_M <- kernelODE_pipeline(Y = Y_M,
+                                      obs_time = obs_time_M,
+                                      kernel = kernel,
+                                      kernel_params = kernel_params)
+res_KernelODE_D <- kernelODE_pipeline(Y = Y_D,
+                                      obs_time = obs_time_D,
+                                      kernel = kernel,
+                                      kernel_params = kernel_params)
+
+# extract the results
+network_est_M <- res_KernelODE_M$network_est_pruned
+network_est_D <- res_KernelODE_D$network_est_pruned
+yy_smth_M <- res_KernelODE_M$yy_smth
+yy_smth_D <- res_KernelODE_D$yy_smth
+tt_M <- res_KernelODE_M$tt
+tt_D <- res_KernelODE_D$tt
+```
+
+**Step 2: Refit KernelODE to evaluate the capability of reconstructing the daughter trajectory of the mother network and daughter network, respectively**
+
+```{r}
+# refit KernelODE and evaluate the networks
+KODE_refit_MtoD <- ODEinherit::refit_kernel_ODE(Y = Y_D,  # recover the daughter traj
+                                           obs_time = obs_time_D,
+                                           yy_smth = yy_smth_D,
+                                           tt = tt_D,
+                                           kernel = kernel, # the same config as used when estimating the network
+                                           kernel_params = kernel_params,  # the same config as used when estimating the network
+                                           interaction_term = FALSE,
+                                           adj_matrix = network_est_M  # feed in the Mother estimated network (regulatory sets for each variable)
+                                           )
+KODE_refit_DtoD <- ODEinherit::refit_kernel_ODE(Y = Y_D,  # recover the daughter traj
+                                           obs_time = obs_time_D,
+                                           yy_smth = yy_smth_D,
+                                           tt = tt_D,
+                                           kernel = kernel, # the same config as used when estimating the network
+                                           kernel_params = kernel_params,  # the same config as used when estimating the network
+                                           interaction_term = FALSE,
+                                           adj_matrix = network_est_D  # feed in the Daughter estimated network (regulatory sets for each variable)
+                                           )
+```
+
+**Step 3: Use the trajectory recovery metrics to compute the inheritance score**
+
+We extract the $R^2$ metrics ($R^{2(M \to D)}$ and $R^{2(D \to D)}$) and compute the inheritance score as $\pi^{(M \to D)} = \frac{R^{2(M \to D)}}{R^{2(D \to D)}}$ (ceiled by 1).
+```{r}
+# extract the R2 metrics, and obtain the inheritance score
+R2_MtoD <- KODE_refit_MtoD$metrics$R2
+R2_DtoD <- KODE_refit_DtoD$metrics$R2
+pi_score <- min(R2_MtoD / R2_DtoD, 1)
+```
+
+
+Plot the recovered trajectories:
+
+
+
+
+# Setup
+
+The following shows the suggested package versions that the developer (GitHub username: WenbinWu2001) used when developing the ODEinherit package.
+
+

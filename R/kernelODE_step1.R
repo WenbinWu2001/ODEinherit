@@ -1,62 +1,47 @@
-kernelODE_step1 <- function(Y,
-                            obs_time,
-                            tt,
-                            type_smooth = "smoothspline",
-                            type_data = "Perturbations"){
-  ## Kernel ODE Step 1: Smoothing spline estimation (single sample version).
-  ## `Y` is a matrix or data.frame of dimension (n, p) with n samples and p variables. Columns of Y are centered to 0 (IMPORTANT).
-  ## `obs_time` is a numeric vector specifying the time points when samples in `Y` are observed. Should lie in the range [0,1].
-  ## `tt` is a numeric vector specifying the integration grid on [0, 1] on which the smoothing splines will be evaluated. The results are fed into step 2 to approximate the integrals in the algorithm.
-  ## Returns `yy_smth`: interpolated values of the estimated smoothing splines on the integration grid `tt`.
-  # if (!(is.matrix(Y) | is.data.frame(Y))) {stop("Y should be a nxp matrix or dataframe.")}
-  # if (nrow(Y) < 2) {stop("Y should contain at least 2 observations.")}
-  # if ((obs_time[1] < 0) | obs_time[length(obs_time)] > 1) {stop("obs_time should lie in the range [0,1].")}
-  # if ((tt[1] < 0) | tt[length(tt)] > 1) {stop("tt should lie in the range [0,1].")}
+#' Smoothing Spline Estimates (Step 1 of Kernel ODE)
+#'
+#' Computes smoothed trajectories and their derivatives using cubic smoothing splines.
+#' This function serves as Step 1 in the Kernel ODE pipeline.
+#'
+#'
+#' @param Y A numeric matrix of dimension (n, p), where each column corresponds to the observed trajectory of a variable. Rows align with `obs_time`.
+#' @param obs_time A numeric vector of length `n` representing observation time points.
+#' @param tt A numeric vector representing a finer time grid used for evaluating the smoothed trajectories and their derivatives.
+#'
+#' @return A list containing:
+#' \describe{
+#'   \item{`yy_smth`}{A numeric matrix of dimension `length(tt)` × `p`, where each column contains the smoothed trajectory of a variable evaluated on `tt`.}
+#'   \item{`init_vals_smth`}{A numeric vector of length `p` containing the estimated initial values (at time 0) for each variable.}
+#'   \item{`deriv_smth`}{A numeric matrix of dimension `length(tt)` × `p`, where each column contains the smoothed first order derivative of a variable evaluated on `tt`.}
+#' }
+#'
+#' @export
+#'
+#' @examples
+#' # Example usage:
+#' set.seed(1)
+#' obs_time <- seq(0, 1, length.out = 10)
+#' Y <- cbind(sin(2 * pi * obs_time), cos(2 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)
+#' tt <- seq(0, 1, length.out = 100)
+#' result <- smoother_SS(obs_time, Y, tt)
+#' matplot(tt, result$yy_smth, type = "l", lty = 1, col = 1:2)
+kernelODE_step1 <- function(Y, obs_time, tt){
+  p <- ncol(Y)
+  times_e <- c(0,tt)  # also fit an initial value
+  init_vals_smth <- rep(NA, p)
+  yy_smth <- matrix(NA, length(tt), p)  # on tt
+  deriv_smth <- matrix(NA, length(tt), p)  # on tt
+  for(j in 1:p){
+    SS_model <- stats::smooth.spline(obs_time, Y[,j], all.knots = T)  # a cubic smoothing spline where all points in `obs_time` are used as knots
+    gcvscore <- SS_model$cv.crit
+    pred_times_e <- stats::predict(SS_model, times_e)$y
 
-  # Y <- scale(Y, center = TRUE, scale = FALSE)  # ensure Y is centered at 0
-  # SS_fit_list <- .SS_estimation(obs_time, Y)  # smoothing spline estimation
-  # yy_smth <- .SS_interpolation(SS_fit_list, tt)  # interpolation of variables values
+    init_vals_smth[j] <- pred_times_e[1]
+    yy_smth[,j] <- pred_times_e[-1]
+    deriv_smth[,j] <- (stats::predict(SS_model,times_e,deriv=1)$y)[-1]
+  }
 
-  # observations <- list(cbind(obs_time, Y))  # some specific form of input for smoothX
-  # smthed<-smoothX(observations=observations,
-  #                 times_e = c(0,tt),  # interpolate on time 0 (for initial value) and tt
-  #                 type_smooth = type_smooth,
-  #                 type_data = type_data)
-  #
-  # init_vals_smth <- smthed$Xhat[[1]][1,]  # p initial values of the smoothing trajectories (one for each variable).
-  #
-  # yy_smth <- smthed$Xhat[[1]][-1,]  # smoothing trajectories on `tt`
-  # # DO NOT CENTER yy_smth!
-
-  # observations <- list(cbind(obs_time, Y))  # some specific form of input for smoothX
-  # smthed<-smoothX(observations=observations,
-  #                 times_e = tt,  # interpolate on time 0 (for initial value) and tt
-  #                 type_smooth = type_smooth,
-  #                 type_data = type_data)
-  # yy_smth <- smthed$Xhat[[1]]
-  # # DO NOT CENTER yy_smth!
-  # init_vals_smth <- NULL
-
-  smthed <- smoother_SS(obs_time = obs_time,
-                        Y = Y,
-                        tt = tt)
-  yy_smth <- smthed$yy_smth
-  init_vals_smth <- smthed$init_vals_smth
-  Fj_smth <- smthed$deriv_smth  # est. deriv of the smoothing trajectories on `tt`
-  ## if GRADE somehow does not return it, compute manually
-  # array_lag1_temp <- array(NA, dim = c(len, p))
-  # array_lag1_temp[1,] <- init_vals_smth
-  # array_lag1_temp[2:len,] <- yy_smth[1:(len-1),]
-  # Fj_smth <- (yy_smth - array_lag1_temp) / delta  # (len, p)
-
-  smoother_config <- list(type_smooth = type_smooth,
-                          type_data = type_data)
-
-  res_smth <- list(init_vals_smth = init_vals_smth,
-                   yy_smth = yy_smth,
-                   tt = tt,
-                   Fj_smth = Fj_smth,
-                   smoother_config = smoother_config)
-  return(res_smth)
+  return (list(yy_smth = yy_smth,
+               init_vals_smth = init_vals_smth,
+               deriv_smth = deriv_smth))
 }
-

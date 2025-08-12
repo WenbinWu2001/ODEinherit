@@ -6,24 +6,11 @@ theta_j_estimation <- function(bj,
                                interaction_term,
                                Yj,
                                adj_col = NULL,
-                               nzero_thres = NULL,
-                               plot_theta_traj = FALSE,
-                               colors_theta_traj = NULL){
+                               nzero_thres = NULL){
   ## TODO: consider changing `adj_matrix` to p^2 x p for interaction_terms = TRUE so that no hierarchical structure is assumed
   ## TODO: OR consider using lasso on the selected columns of G when incorporating adjacency matrix into algorithm with interaction terms
   ## TODO: consider only regress on half of the columns of G to reduce multi-colinearity and improve the results
-  ## `colors_theta_traj` is a color palette that specifies the color of the trajectory for each element in theta_j.
 
-  # check and convert `colors_theta_traj`
-  if (plot_theta_traj) {
-    if (is.null(colors_theta_traj)) {
-      colors_theta_traj <- grDevices::rainbow(ncol(G))  # default colors for theta trajectories. Remains the same for all iterations and for all variables.
-    } else if (length(colors_theta_traj) != ncol(G)) {
-      warning("colors_theta_traj should either be NULL or have the same length as theta_j. Reset to be default colors.")
-      colors_theta_traj <- grDevices::rainbow(ncol(G))
-    }
-    colors_theta_traj <- c("#FFFFFF", colors_theta_traj)  # set the first color to be white, to adjust for the intercept (1st element) in Lasso
-  }
 
   n <- length(Yj)
 
@@ -112,13 +99,6 @@ theta_j_estimation <- function(bj,
     } else {  # controlling the number of nonzero coefficients (only used when NO NETWORK IS GIVEN)
       best_kappa <- min(cv_fit$lambda[cv_fit$nzero <= floor(nzero_thres * ncol(G))])
       theta_j <- as.vector(stats::coef(cv_fit, s = best_kappa)[-1])  # exclude the (zero) intercept
-    }
-    # optionally, plot the trajectory
-    if (plot_theta_traj) {
-      fit_plot <- glmnet::glmnet(x = G, y = zj, family = "gaussian", alpha = 1, intercept = FALSE, standardize = TRUE, lower.limits = 0)
-      coef_min_lambda <- stats::coef(fit_plot)[, which.min(fit_plot$lambda)]  # to align the color palette overall iterations and for all variables to be consistent
-      graphics::plot(fit_plot, xvar = "lambda", label = TRUE, col = colors_theta_traj[coef_min_lambda > 0])
-      graphics::abline(v = log(best_kappa), lty = "dashed", col = "red")
     }
   }
 

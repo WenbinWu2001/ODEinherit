@@ -174,8 +174,7 @@
   metrics_bef_prune <- parallel::mclapply(1:K,
                                           FUN = function(k){
                                             assess_recov_traj(Y = Y_list[[k]],
-                                                              Y_est = Y_est_bef_prune_list[[k]],
-                                                              Y_smth = yy_smth_list[[k]][obs_idx_list[[k]],])
+                                                              Y_est = Y_est_bef_prune_list[[k]])
                                             },
                                           mc.cores = mc.cores)
 
@@ -228,10 +227,10 @@
                                                Yj <- Y_list[[k]][,j]
 
                                                # compute the R2 using the network with this edge deleted
-                                               MS_res_est <- mean((Yj - Yj_est_new)^2)  # mean squared residuals of est. trajectory w.r.t. observations (variance in our estimated trajectory / "recovered signals")
-                                               MS_total <- mean(Yj^2)  # mean squared total of the observations. Note that `Y_list` has centered columns.
-                                               R2_est <- max(0, 1 - MS_res_est/MS_total)  # R2 of the new reconstructed variable j trajectory with var_idx pruned
-                                               R2_edge <- metrics_bef_prune[[k]][[j]][["R2_est"]] - R2_est  # % variation explained of variable j traj by this edge for this cell, w.r.t. the latest network
+                                               MS_est_j <- mean((Yj - Yj_est_new)^2)
+                                               MS_total_j <- mean((Yj - mean(Yj))^2)
+                                               R2_est_j <- max(0, 1 - MS_est_j/MS_total_j)  # R2 of the new reconstructed variable j trajectory with var_idx pruned
+                                               R2_edge <- metrics_bef_prune[[k]][["R2_per_var_vec"]][j] - R2_est_j  # % variation explained of variable j traj by this edge for this cell, w.r.t. the latest network
 
                                                return (list(R2_edge = R2_edge,
                                                             Yj_est_new = Yj_est_new))
@@ -247,11 +246,11 @@
 
     # prune the least important edge for this variable
     R2_j <- R2_mat[,j]
-    R2_j_min <- min(R2_j, na.rm = T)  # corresponding to the least important affecting variable among those selected ones in the input network
+    R2_j_min <- min(R2_j, na.rm = T)  # the least important selected regulator
 
     if (R2_j_min < prune_thres) {
-      # prune
-      row_idx_temp <- which(R2_j == R2_j_min)[1]  # the corresponding least important regulator
+      # at least one edge can be pruned. Prune the least important regulator
+      row_idx_temp <- which(R2_j == R2_j_min)[1]
       network_aft[row_idx_temp, j] <- 0
       prune_edge_idx <- rbind(prune_edge_idx, c(row_idx_temp, j))
     } else {
@@ -267,7 +266,6 @@
     cat("Note: R2 increases after deleting each of the following edges (row - col): ",
         paste(neg_edge_idx[,1], neg_edge_idx[,2], sep = "-", collapse = ", "), "\n")
   }
-  # TODO: Sidenot: We can use this R2 to evaluate whether R2 is in the right cluster for the multi-sample `final` version algorithm. (An abnormal cell will have very large R2 improvements when deleting any or some of the edges)
 
   # If no pruning is done, prune_edge_idx is an empty matrix with dimension (0,2).
   if (nrow(prune_edge_idx) == 0) {cat("No pruning is done. Network is already pruned to the simplest.\n")}
@@ -285,6 +283,28 @@
 
 
 
+#' Title
+#'
+#' @param network_original
+#' @param prune_thres
+#' @param depth
+#' @param eval_edge_R2_pruned
+#' @param Y_list
+#' @param yy_smth_list
+#' @param obs_time_list
+#' @param tt
+#' @param kernel
+#' @param kernel_params_list
+#' @param interaction_term
+#' @param theta_initial_list
+#' @param max_iter
+#' @param tol
+#' @param verbose
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 prune_network <- function(network_original,
                           prune_thres = 0.05,
                           depth = NULL,
@@ -411,8 +431,7 @@ prune_network <- function(network_original,
   metrics_unpruned <- parallel::mclapply(1:K,
                                                FUN = function(k){
                                                  assess_recov_traj(Y = Y_list[[k]],
-                                                                   Y_est = Y_est_list[[k]],
-                                                                   Y_smth = yy_smth_list[[k]][obs_idx_list[[k]],])
+                                                                   Y_est = Y_est_list[[k]])
                                                  },
                                                mc.cores = mc.cores)
 
@@ -529,10 +548,10 @@ prune_network <- function(network_original,
                                                  Yj_est_new <- res_Fj_eval$yy_est[obs_idx_list[[k]]]
                                                  Yj <- Y_list[[k]][,j]
 
-                                                 MS_res_est <- mean((Yj - Yj_est_new)^2)  # mean squared residuals of est. trajectory w.r.t. observations (variance in our estimated trajectory / "recovered signals")
-                                                 MS_total <- mean(Yj^2)  # mean squared total of the observations. Note that `Y_list` has centered columns.
-                                                 R2_est <- max(0, 1 - MS_res_est/MS_total)  # R2 of the new reconstructed variable j trajectory with var_idx pruned
-                                                 R2_edge <- metrics_unpruned[[k]][[j]][["R2_est"]] - R2_est  # % variation explained of variable j traj by this edge for this cell, w.r.t. the original unpruned network
+                                                 MS_est_j <- mean((Yj - Yj_est_new)^2)  # mean squared residuals of est. trajectory w.r.t. observations (variance in our estimated trajectory / "recovered signals")
+                                                 MS_total_j <- mean(Yj^2)  # mean squared total of the observations. Note that `Y_list` has centered columns.
+                                                 R2_est_j <- max(0, 1 - MS_est_j/MS_total_j)  # R2 of the new reconstructed variable j trajectory with var_idx pruned
+                                                 R2_edge <- metrics_unpruned[[k]][["R2_per_var_vec"]][j] - R2_est_j  # % variation explained of variable j traj by this edge for this cell, w.r.t. the original unpruned network
 
                                                  return (list(R2_edge = R2_edge,
                                                               Yj_est_new = Yj_est_new))

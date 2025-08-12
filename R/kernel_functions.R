@@ -1,3 +1,12 @@
+#' Title
+#'
+#' @param y1
+#' @param y2
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 linear_kernel <- function(y1, y2){
   ## K(y1, y2) = y1*y2, equivalent to polynomial kernel with intercept=0, degree=1.
   ## Note this function is vectorized.

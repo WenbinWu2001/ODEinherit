@@ -19,7 +19,9 @@ A named list with two elements:
 \item \code{Cdc10}, \code{Stb3}, \code{CLB5}, \code{Whi5}, \code{Xbp1}, \code{Tup1}
 }
 Each matrix has rows representing cells and columns representing uniformly spaced time points.
-The first column is \code{cell_id}, matching those in \code{metadata}. Values before each cell's birth are \code{NA}.
+In other words, each row is the time series of a protein for a single cell.
+The first column is \code{cell_id}, matching those in \code{metadata}.
+Values before each cell's birth are \code{NA}.
 }
 }
 }
@@ -32,6 +34,7 @@ A dataset containing cell lineage metadata and time series of protein expression
 \details{
 Time series data were denoised using functional principal component analysis and interpolated to 5× temporal resolution using local polynomial smoothing.
 The dataset includes 25 mother cells and 60 daughter cells, each measured on a common grid of 240 time points (uniformly spaced) across the experiment (originally 48 time points before interpolation).
+In the paper, these time series are referred to as "trajectories".
 }
 \examples{
 data(cell_lineage_data)
