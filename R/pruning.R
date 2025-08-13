@@ -256,9 +256,10 @@
 
   # prune the network
   for (res in res_edge_eval_single_step){
+    if (is.null(res)) {next}
+
     j <- res$var_to_prune
     pruned_edge <- res$pruned_edge
-
     if (any(is.na(pruned_edge))){next}  # no edge to prune
 
     network_aft[pruned_edge[1], pruned_edge[2]] <- 0
@@ -584,6 +585,9 @@ prune_network <- function(network_original,
     }, mc.cores = mc.core)
 
     for (j in 1:p){
+      res <- res_edge_eval[[j]]
+      if (is.null(res)){next}
+
       R2_multi_arr_pruned[,j,] <- res$R2_j_multi_mat_pruned
       R2_avg_mat_pruned[,j] <- res$R2_j_avg_vec_pruned
     }
@@ -617,7 +621,9 @@ prune_network <- function(network_original,
                               interaction_term = interaction_term,
                               theta_initial_list = theta_initial_list,
                               max_iter = max_iter,
-                              tol = tol))
+                              tol = tol,
+                              parallel = parallel,
+                              mc.cores = mc.cores))
 
   return (res_prune_network)
 }
