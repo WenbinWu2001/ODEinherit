@@ -1,3 +1,50 @@
+#' Evaluate \eqn{F_j} and Recovery the Trajectory for a Single Variable
+#'
+#' Evaluates the derivative function \eqn{F_j} of a single variable on the
+#' integration grid `tt` and recovers the trajectory by numerical integration,
+#' given estimates of \eqn{b_j}, \eqn{c_j}, and \eqn{\theta_j}.
+#'
+#' @inheritParams kernelODE_step1
+#' @inheritParams kernelODE_step2
+#'
+#' @param bj A numeric scalar, giving the estimated \eqn{b_j} from Kernel ODE
+#'   (i.e., `res_bj[j]`).
+#' @param cj A numeric vector of length `n`, giving the estimated \eqn{c_j} from
+#'   Kernel ODE (i.e., `res_cj[,j]`).
+#' @param kk_array Optional precomputed kernel array on `tt`. An array of
+#'   dimension (`len`, `len`, `p`) when `interaction_term = FALSE`, or (`len`,
+#'   `len`, `p^2`) when `interaction_term = TRUE`, where `len = length(tt)`.
+#'   Providing `kk_array` enables reuse across variables and can greatly reduce
+#'   computation.
+#' @param theta_j A numeric vector of length `p` (if `interaction = FALSE`) or
+#'   `p^2` (if `interaction = TRUE`), giving the estimated \eqn{\theta_j}
+#'   coefficients for variable \eqn{j} from Kernel ODE (i.e., `res_theta[,j]`).
+#' @param Yj A numeric vector of length `n`, giving the observed trajectory for variable
+#'   \eqn{j} (i.e., `Y[, j]`).
+#' @param yy_smth Numeric matrix of dimension (`len`, `p`); smoothed
+#'   trajectories evaluated on `tt` (i.e., output of `kernelODE_step1()`).
+#'
+#'
+#' @returns A list with components:
+#' \describe{
+#'   \item{`theta_j0`}{A numeric scalar giving estimated initial condition for variable \eqn{j}.}
+#'   \item{`Fj_est`}{A numeric vector (length `len`) giving the evaluated \eqn{F_j} on `tt`.}
+#'   \item{`yy_est`}{A numeric vector (length `len`) giving the recovered trajectory on `tt`.}
+#'   \item{`TV_est`}{A numeric scalar giving the total variation \eqn{\int |F_j(t)| \, dt}
+#'     approximated on `tt`.}
+#' }
+#'
+#' @details Given \eqn{b_j}, \eqn{c_j}, and \eqn{\theta_j}, the function
+#' constructs the kernel-weighted integral operator on the grid `tt` to evaluate
+#' \eqn{F_j}, estimates the initial condition \eqn{\theta_{j0}}, then recovers
+#' the trajectory via cumulative summation on `tt` (first-order approximation).
+#' When provided, `kk_array` is reused to avoid recomputing kernel blocks.
+#'
+#' @seealso [kernelODE_step1()], [kernelODE_step2()], [assess_recov_traj()]
+#'
+#' @examples
+#'
+#' @export
 evaluate_Fj <- function(bj,
                         cj,
                         interaction_term,
@@ -9,12 +56,6 @@ evaluate_Fj <- function(bj,
                         tt,
                         Yj,
                         yy_smth){
-  ## evaluate Fj at the integration grid tt. Returns the estimated initial condition (a scalar), the estimated Fj on tt, the reconstructed trajectory on tt, and the total variation of the reconstructed trajectory.
-  ## Use Eq (13) on page 10.
-  ## `Yj`: a vector of length n. It is the observed time series for variable j.
-  ## `kk_array`: The analog of Sigma_k_kl on the integration grid `tt`. It is the output from `.construct_kk_array`, of dimension (len, len, p) for `interaction_term` == FALSE or (len, len, p^2) for `interaction_term` == TRUE, where `len` is `length(tt)`.
-  ## It is shared across all variables. Pre-computing it and passing it into this function for reusing can largely save computations when iterating over all variables and evaluating their Fj's.
-
   n <- length(obs_time)
   p <- ncol(yy_smth)
   len <- length(tt)
@@ -24,7 +65,7 @@ evaluate_Fj <- function(bj,
   if ((length(bj) != 1)) {stop("bj should be a scalar.")}
   if (length(cj) != n) {stop("cj should be a vector of length n.")}
   if (length(theta_j) != ifelse(interaction_term, p^2, p)) {stop("theta_j should be a vector of length p or p^2.")}
-  if ((!is.null(kk_array)) & any(dim(kk_array) != c(len, len, length(theta_j)))) {stop("kk_array should be an array of dimension (len, len, p) or (len, len, p^2).")}
+  if ((!is.null(kk_array)) & any(dim(kk_array) != c(len, len, length(theta_j)))) {stop("kk_array should be an array of dimension (length(tt), length(tt), p) or (length(tt), length(tt), p^2).")}
 
   cj <- matrix(cj, ncol = 1)  # nx1
 

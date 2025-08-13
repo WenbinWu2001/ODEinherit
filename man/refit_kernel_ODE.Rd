@@ -2,7 +2,7 @@
 % Please edit documentation in R/refit_kernel_ODE.R
 \name{refit_kernel_ODE}
 \alias{refit_kernel_ODE}
-\title{Title}
+\title{Refit Kernel ODE with a Given Regulatory Network}
 \usage{
 refit_kernel_ODE(
   Y,
@@ -12,8 +12,8 @@ refit_kernel_ODE(
   kernel,
   kernel_params,
   interaction_term,
+  adj_matrix,
   theta_initial = NULL,
-  adj_matrix = NULL,
   nzero_thres = NULL,
   tol = 0.001,
   max_iter = 10,
@@ -21,8 +21,57 @@ refit_kernel_ODE(
 )
 }
 \arguments{
-\item{verbose}{}
+\item{Y}{A numeric matrix of dimension (\code{n}, \code{p}), where each column corresponds to the observed trajectory of a variable. Rows align with \code{obs_time}.}
+
+\item{obs_time}{A numeric vector of length \code{n} representing observation time points.}
+
+\item{yy_smth}{A numeric matrix of dimension (\code{length(tt)}, \code{p}), where each column contains the smoothed trajectory of a variable evaluated on \code{tt}. This is typically the output of \code{\link[=kernelODE_step1]{kernelODE_step1()}}.}
+
+\item{tt}{A numeric vector representing a finer time grid used for evaluating the smoothed trajectories and their derivatives.}
+
+\item{kernel}{Kernel function to use.}
+
+\item{kernel_params}{A list of length \code{p}, where each element is a named list of
+parameters for a specific variable (e.g., \code{list(bandwidth = 1)} for Gaussian kernel). If the
+list has length 1, the same parameter set is used for all variables. This is typically the output of \code{\link[=auto_select_kernel_params]{auto_select_kernel_params()}}.}
+
+\item{interaction_term}{A logical value specifying whether to include interaction effects in the model.}
+
+\item{adj_matrix}{An adjacency matrix (\code{p} × \code{p}) representing the regulatory
+network to use for refitting. Entry \verb{(k, j) = 1} indicates variable \code{k}
+regulates variable \code{j}. Typically obtained from a previous Kernel ODE
+estimation. If \code{NULL}, defaults to a fully connected network.
+Although technically possible, this function is \emph{not} intended for
+estimating \eqn{F_j} or inferring a regulatory network.}
+
+\item{theta_initial}{A numeric matrix containing the initial \eqn{\theta_j} values for each variable at the start of optimization:
+\itemize{
+\item If \code{interaction_term = FALSE}, \code{theta_initial} must have dimensions (\code{p}, \code{p}).
+\item If \code{interaction_term = TRUE}, \code{theta_initial} must have dimensions (\code{p^2}, \code{p}).
+If \code{NULL}, defaults to all ones.
+}}
+
+\item{nzero_thres}{A number in \link{0, 1} specifying the maximum proportion of
+nonzero regulators (edges) allowed for each variable (i.e., at most \code{p * nzero_thres}
+regulators). Only used when \code{adj_matrix} is \code{NULL}. This provides a faster
+alternative to the computationally expensive pruning process.}
+
+\item{tol}{Convergence tolerance for the relative improvement in the Frobenius norm of the \eqn{\theta} matrix.}
+
+\item{max_iter}{Maximum number of iterations for the optimization.}
+
+\item{verbose}{Integer; if greater than 0, prints progress messages during optimization.}
+}
+\value{
+A list with components:
+\describe{
+\item{\code{metrics}}{Recovery metrics for the trajectories under the given
+network, including the overall \eqn{R^2} and variable-specific \eqn{R^2}
+values. See \code{\link[=assess_recov_traj]{assess_recov_traj()}}.}
+\item{\code{Y_refit}}{Recovered trajectories from the refitted model, in the same
+format as \code{Y}.}
+}
 }
 \description{
-Title
+Refits the Kernel ODE model using a pre-specified regulatory network, bypassing the network estimation step.
 }

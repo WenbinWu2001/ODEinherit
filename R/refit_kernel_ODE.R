@@ -1,20 +1,22 @@
-#' Title
+#' Refit Kernel ODE with a Given Regulatory Network
 #'
-#' @param Y
-#' @param obs_time
-#' @param yy_smth
-#' @param tt
-#' @param kernel
-#' @param kernel_params
-#' @param interaction_term
-#' @param theta_initial
-#' @param adj_matrix
-#' @param nzero_thres
-#' @param tol
-#' @param max_iter
-#' @param verbose
+#' Refits the Kernel ODE model using a pre-specified regulatory network, bypassing the network estimation step.
+#' @inheritParams kernelODE_step2
+#' @param adj_matrix An adjacency matrix (`p` × `p`) representing the regulatory
+#'   network to use for refitting. Entry `(k, j) = 1` indicates variable `k`
+#'   regulates variable `j`. Typically obtained from a previous Kernel ODE
+#'   estimation. If `NULL`, defaults to a fully connected network.
+#'   Although technically possible, this function is *not* intended for
+#'   estimating \eqn{F_j} or inferring a regulatory network.
 #'
-#' @returns
+#' @returns A list with components:
+#' \describe{
+#'   \item{`metrics`}{Recovery metrics for the trajectories under the given
+#'     network, including the overall \eqn{R^2} and variable-specific \eqn{R^2}
+#'     values. See [assess_recov_traj()].}
+#'   \item{`Y_refit`}{Recovered trajectories from the refitted model, in the same
+#'     format as `Y`.}
+#'   }
 #' @export
 #'
 #' @examples
@@ -25,12 +27,17 @@ refit_kernel_ODE <- function(Y,
                              kernel,
                              kernel_params,
                              interaction_term,
+                             adj_matrix,
                              theta_initial = NULL,
-                             adj_matrix = NULL,
                              nzero_thres = NULL,
                              tol = 0.001,
                              max_iter = 10,
                              verbose = 0){
+  if (is.null(adj_matrix)) {
+    warning("No network is given. Set to fully connected network.")
+    adj_matrix <- matrix(1, nrow = ncol(Y), ncol = ncol(Y))
+  }
+
   # refit KODE using the given network
   res_KODE_refit <- kernelODE_step2(Y = Y,
                                     obs_time = obs_time,

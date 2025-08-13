@@ -19,7 +19,7 @@ This tutorial presents a toy example of **ODEinherit**, using the dataset from o
 
 A successful installation of `ODEinherit` is required. See the last section of this article for a list of all system and package dependencies used to create this tutorial.
 
-For a single mother–daughter cell pair, the pipeline should complete in under an hour.
+For a single mother–daughter cell pair, the pipeline should complete in under 15 minutes.
 
 # Overview
 Here we present the workflow for a single mother–daughter cell pair, the same pair used to create Figure 2 in the paper. See `?cell_lineage_data` for more details about the dataset.
@@ -99,7 +99,7 @@ Before applying KernelODE, we:
 
 In **Step 1** of KernelODE, we fit cubic smoothing splines to obtain smoothed trajectory estimates.  
 In **Step 2**, we estimate ODE regulatory networks within an RKHS modeling framework.  
-For this example, we use a first-order Mat$\'e$rn kernel.  
+For this example, we use a first-order Mat\'ern kernel.  
 
 See the original [KernelODE paper](https://arxiv.org/abs/2008.02915) for more details on the algorithm.
 
@@ -177,6 +177,7 @@ kernelODE_pipeline <- function(Y,
                                          kernel = kernel,
                                          kernel_params_list = list(kernel_params),
                                          interaction_term = FALSE,
+                                         parallel = TRUE,
                                          verbose = 0)
   
   network_est_pruned <- res_prune$network_pruned
@@ -315,8 +316,7 @@ pi_score
 The following shows the suggested package versions that the developer (GitHub username: WenbinWu2001) used when developing the ODEinherit package.
 
 ```R
-> devtools::session_info()
-─ Session info ───────────────────────────────────────────────────────────────────────────────────────────────
+─ Session info ───────────────────────────────────────────────────────
  setting  value
  version  R version 4.4.2 (2024-10-31)
  os       macOS Sequoia 15.3.2
@@ -326,75 +326,66 @@ The following shows the suggested package versions that the developer (GitHub us
  collate  en_US.UTF-8
  ctype    en_US.UTF-8
  tz       America/New_York
- date     2025-08-12
+ date     2025-08-13
  rstudio  2024.12.1+563 Kousa Dogwood (desktop)
  pandoc   3.2 @ /Applications/RStudio.app/Contents/Resources/app/quarto/bin/tools/aarch64/ (via rmarkdown)
  quarto   1.5.57 @ /Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto
 
-─ Packages ───────────────────────────────────────────────────────────────────────────────────────────────────
- ! package     * version    date (UTC) lib source
-   brio          1.1.5      2024-04-24 [1] CRAN (R 4.4.1)
-   cachem        1.1.0      2024-05-16 [1] CRAN (R 4.4.1)
-   callr         3.7.6      2024-03-25 [1] CRAN (R 4.4.0)
-   cli           3.6.4      2025-02-13 [1] CRAN (R 4.4.1)
-   codetools     0.2-20     2024-03-31 [1] CRAN (R 4.4.2)
-   commonmark    1.9.2      2024-10-04 [1] CRAN (R 4.4.1)
-   desc          1.4.3      2023-12-10 [1] CRAN (R 4.4.1)
-   devtools      2.4.5      2022-10-11 [1] CRAN (R 4.4.0)
-   digest        0.6.37     2024-08-19 [1] CRAN (R 4.4.1)
-   ellipsis      0.3.2      2021-04-29 [1] CRAN (R 4.4.0)
-   evaluate      1.0.3      2025-01-10 [1] CRAN (R 4.4.1)
-   fastmap       1.2.0      2024-05-15 [1] CRAN (R 4.4.1)
-   foreach       1.5.2      2022-02-02 [1] CRAN (R 4.4.0)
-   fs            1.6.5      2024-10-30 [1] CRAN (R 4.4.1)
-   glmnet        4.1-8      2023-08-22 [1] CRAN (R 4.4.0)
-   glue          1.8.0      2024-09-30 [1] CRAN (R 4.4.1)
-   htmltools     0.5.8.1    2024-04-04 [1] CRAN (R 4.4.0)
-   htmlwidgets   1.6.4      2023-12-06 [1] CRAN (R 4.4.0)
-   httpuv        1.6.15     2024-03-26 [1] CRAN (R 4.4.0)
-   iterators     1.0.14     2022-02-05 [1] CRAN (R 4.4.0)
-   knitr         1.49       2024-11-08 [1] CRAN (R 4.4.1)
-   later         1.4.1      2024-11-27 [1] CRAN (R 4.4.1)
-   lattice       0.22-6     2024-03-20 [1] CRAN (R 4.4.2)
-   lifecycle     1.0.4      2023-11-07 [1] CRAN (R 4.4.0)
-   magrittr      2.0.3      2022-03-30 [1] CRAN (R 4.4.0)
-   Matrix        1.7-2      2025-01-23 [1] CRAN (R 4.4.1)
-   memoise       2.0.1      2021-11-26 [1] CRAN (R 4.4.0)
-   mime          0.12       2021-09-28 [1] CRAN (R 4.4.0)
-   miniUI        0.1.1.1    2018-05-18 [1] CRAN (R 4.4.0)
-   ODEinherit  * 1.0.0      2025-08-12 [1] local
-   pillar        1.10.1     2025-01-07 [1] CRAN (R 4.4.1)
-   pkgbuild      1.4.6      2025-01-16 [1] CRAN (R 4.4.1)
-   pkgconfig     2.0.3      2019-09-22 [1] CRAN (R 4.4.0)
-   pkgload       1.4.0      2024-06-28 [1] CRAN (R 4.4.0)
-   processx      3.8.5      2025-01-08 [1] CRAN (R 4.4.1)
-   profvis       0.4.0      2024-09-20 [1] CRAN (R 4.4.1)
-   promises      1.3.2      2024-11-28 [1] CRAN (R 4.4.1)
-   ps            1.8.1      2024-10-28 [1] CRAN (R 4.4.1)
-   purrr         1.0.4      2025-02-05 [1] CRAN (R 4.4.1)
-   R6            2.6.1      2025-02-15 [1] CRAN (R 4.4.1)
-   Rcpp          1.0.14     2025-01-12 [1] CRAN (R 4.4.1)
-   remotes       2.5.0      2024-03-17 [1] CRAN (R 4.4.1)
-   rlang         1.1.5      2025-01-17 [1] CRAN (R 4.4.1)
-   rmarkdown     2.29       2024-11-04 [1] CRAN (R 4.4.1)
-   roxygen2      7.3.2      2024-06-28 [1] CRAN (R 4.4.0)
-   rprojroot     2.0.4      2023-11-05 [1] CRAN (R 4.4.1)
-   rstudioapi    0.17.1     2024-10-22 [1] CRAN (R 4.4.1)
-   sessioninfo   1.2.3      2025-02-05 [1] CRAN (R 4.4.1)
-   shape         1.4.6.1    2024-02-23 [1] CRAN (R 4.4.1)
-   shiny         1.10.0     2024-12-14 [1] CRAN (R 4.4.1)
-   stringi       1.8.4      2024-05-06 [1] CRAN (R 4.4.1)
-   stringr       1.5.1      2023-11-14 [1] CRAN (R 4.4.0)
-   survival      3.8-3      2024-12-17 [1] CRAN (R 4.4.1)
-   testthat      3.2.3      2025-01-13 [1] CRAN (R 4.4.1)
-   tibble        3.2.1      2023-03-20 [1] CRAN (R 4.4.0)
-   urlchecker    1.0.1      2021-11-30 [1] CRAN (R 4.4.0)
-   usethis       3.1.0      2024-11-26 [1] CRAN (R 4.4.1)
-   vctrs         0.6.5      2023-12-01 [1] CRAN (R 4.4.0)
-   withr         3.0.2      2024-10-28 [1] CRAN (R 4.4.1)
-   xfun          0.50       2025-01-07 [1] CRAN (R 4.4.1)
-   xml2          1.3.6      2023-12-04 [1] CRAN (R 4.4.1)
-   xtable        1.8-4      2019-04-21 [1] CRAN (R 4.4.0)
-   yaml          2.3.10     2024-07-26 [1] CRAN (R 4.4.1)
+─ Packages ───────────────────────────────────────────────────────────
+ package     * version date (UTC) lib source
+ cachem        1.1.0   2024-05-16 [1] CRAN (R 4.4.1)
+ callr         3.7.6   2024-03-25 [1] CRAN (R 4.4.0)
+ cli           3.6.4   2025-02-13 [1] CRAN (R 4.4.1)
+ codetools     0.2-20  2024-03-31 [1] CRAN (R 4.4.2)
+ desc          1.4.3   2023-12-10 [1] CRAN (R 4.4.1)
+ devtools      2.4.5   2022-10-11 [1] CRAN (R 4.4.0)
+ digest        0.6.37  2024-08-19 [1] CRAN (R 4.4.1)
+ ellipsis      0.3.2   2021-04-29 [1] CRAN (R 4.4.0)
+ evaluate      1.0.3   2025-01-10 [1] CRAN (R 4.4.1)
+ fastmap       1.2.0   2024-05-15 [1] CRAN (R 4.4.1)
+ foreach       1.5.2   2022-02-02 [1] CRAN (R 4.4.0)
+ fs            1.6.5   2024-10-30 [1] CRAN (R 4.4.1)
+ glmnet        4.1-8   2023-08-22 [1] CRAN (R 4.4.0)
+ glue          1.8.0   2024-09-30 [1] CRAN (R 4.4.1)
+ htmltools     0.5.8.1 2024-04-04 [1] CRAN (R 4.4.0)
+ htmlwidgets   1.6.4   2023-12-06 [1] CRAN (R 4.4.0)
+ httpuv        1.6.15  2024-03-26 [1] CRAN (R 4.4.0)
+ iterators     1.0.14  2022-02-05 [1] CRAN (R 4.4.0)
+ knitr         1.49    2024-11-08 [1] CRAN (R 4.4.1)
+ later         1.4.1   2024-11-27 [1] CRAN (R 4.4.1)
+ lattice       0.22-6  2024-03-20 [1] CRAN (R 4.4.2)
+ lifecycle     1.0.4   2023-11-07 [1] CRAN (R 4.4.0)
+ magrittr      2.0.3   2022-03-30 [1] CRAN (R 4.4.0)
+ Matrix        1.7-2   2025-01-23 [1] CRAN (R 4.4.1)
+ memoise       2.0.1   2021-11-26 [1] CRAN (R 4.4.0)
+ mime          0.12    2021-09-28 [1] CRAN (R 4.4.0)
+ miniUI        0.1.1.1 2018-05-18 [1] CRAN (R 4.4.0)
+ ODEinherit  * 1.0.0   2025-08-13 [1] local
+ pillar        1.10.1  2025-01-07 [1] CRAN (R 4.4.1)
+ pkgbuild      1.4.6   2025-01-16 [1] CRAN (R 4.4.1)
+ pkgconfig     2.0.3   2019-09-22 [1] CRAN (R 4.4.0)
+ pkgload       1.4.0   2024-06-28 [1] CRAN (R 4.4.0)
+ processx      3.8.5   2025-01-08 [1] CRAN (R 4.4.1)
+ profvis       0.4.0   2024-09-20 [1] CRAN (R 4.4.1)
+ promises      1.3.2   2024-11-28 [1] CRAN (R 4.4.1)
+ ps            1.8.1   2024-10-28 [1] CRAN (R 4.4.1)
+ purrr         1.0.4   2025-02-05 [1] CRAN (R 4.4.1)
+ R6            2.6.1   2025-02-15 [1] CRAN (R 4.4.1)
+ Rcpp          1.0.14  2025-01-12 [1] CRAN (R 4.4.1)
+ remotes       2.5.0   2024-03-17 [1] CRAN (R 4.4.1)
+ rlang         1.1.5   2025-01-17 [1] CRAN (R 4.4.1)
+ rmarkdown     2.29    2024-11-04 [1] CRAN (R 4.4.1)
+ rprojroot     2.0.4   2023-11-05 [1] CRAN (R 4.4.1)
+ rstudioapi    0.17.1  2024-10-22 [1] CRAN (R 4.4.1)
+ sessioninfo   1.2.3   2025-02-05 [1] CRAN (R 4.4.1)
+ shape         1.4.6.1 2024-02-23 [1] CRAN (R 4.4.1)
+ shiny         1.10.0  2024-12-14 [1] CRAN (R 4.4.1)
+ survival      3.8-3   2024-12-17 [1] CRAN (R 4.4.1)
+ tibble        3.2.1   2023-03-20 [1] CRAN (R 4.4.0)
+ urlchecker    1.0.1   2021-11-30 [1] CRAN (R 4.4.0)
+ usethis       3.1.0   2024-11-26 [1] CRAN (R 4.4.1)
+ vctrs         0.6.5   2023-12-01 [1] CRAN (R 4.4.0)
+ xfun          0.50    2025-01-07 [1] CRAN (R 4.4.1)
+ xtable        1.8-4   2019-04-21 [1] CRAN (R 4.4.0)
+ yaml          2.3.10  2024-07-26 [1] CRAN (R 4.4.1)
 ```
-

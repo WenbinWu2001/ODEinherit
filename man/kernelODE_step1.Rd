@@ -14,7 +14,7 @@ kernelODE_step1(Y, obs_time, tt)
 \item{tt}{A numeric vector representing a finer time grid used for evaluating the smoothed trajectories and their derivatives.}
 }
 \value{
-A list containing:
+A list with components:
 \describe{
 \item{\code{yy_smth}}{A numeric matrix of dimension (\code{length(tt)}, \code{p}), where each column contains the smoothed trajectory of a variable evaluated on \code{tt}.}
 \item{\code{init_vals_smth}}{A numeric vector of length \code{p} containing the estimated initial values (at time 0) for each variable.}
@@ -29,7 +29,7 @@ This function serves as Step 1 in the Kernel ODE pipeline.
 # Example usage:
 set.seed(1)
 obs_time <- seq(0, 1, length.out = 10)
-Y <- cbind(sin(2 * pi * obs_time), cos(2 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)
+Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
 tt <- seq(0, 1, length.out = 100)
 result <- smoother_SS(obs_time, Y, tt)
 matplot(tt, result$yy_smth, type = "l", lty = 1, col = 1:2)

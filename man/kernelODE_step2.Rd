@@ -2,7 +2,7 @@
 % Please edit documentation in R/kernelODE_step2.R
 \name{kernelODE_step2}
 \alias{kernelODE_step2}
-\title{Title}
+\title{Derivative Function Estimation (Step 2 of Kernel ODE)}
 \usage{
 kernelODE_step2(
   Y,
@@ -15,17 +15,79 @@ kernelODE_step2(
   theta_initial = NULL,
   adj_matrix = NULL,
   nzero_thres = NULL,
-  eval_edge_R2 = FALSE,
   eval_loss = FALSE,
   tol = 0.001,
   max_iter = 10,
-  parallel = TRUE,
   verbose = 0
 )
 }
 \arguments{
-\item{verbose}{}
+\item{Y}{A numeric matrix of dimension (\code{n}, \code{p}), where each column corresponds to the observed trajectory of a variable. Rows align with \code{obs_time}.}
+
+\item{obs_time}{A numeric vector of length \code{n} representing observation time points.}
+
+\item{yy_smth}{A numeric matrix of dimension (\code{length(tt)}, \code{p}), where each column contains the smoothed trajectory of a variable evaluated on \code{tt}. This is typically the output of \code{\link[=kernelODE_step1]{kernelODE_step1()}}.}
+
+\item{tt}{A numeric vector representing a finer time grid used for evaluating the smoothed trajectories and their derivatives.}
+
+\item{kernel}{Kernel function to use.}
+
+\item{kernel_params}{A list of length \code{p}, where each element is a named list of
+parameters for a specific variable (e.g., \code{list(bandwidth = 1)} for Gaussian kernel). If the
+list has length 1, the same parameter set is used for all variables. This is typically the output of \code{\link[=auto_select_kernel_params]{auto_select_kernel_params()}}.}
+
+\item{interaction_term}{A logical value specifying whether to include interaction effects in the model.}
+
+\item{theta_initial}{A numeric matrix containing the initial \eqn{\theta_j} values for each variable at the start of optimization:
+\itemize{
+\item If \code{interaction_term = FALSE}, \code{theta_initial} must have dimensions (\code{p}, \code{p}).
+\item If \code{interaction_term = TRUE}, \code{theta_initial} must have dimensions (\code{p^2}, \code{p}).
+If \code{NULL}, defaults to all ones.
+}}
+
+\item{adj_matrix}{An adjacency matrix (\code{p} × \code{p}) representing a fixed
+regulatory network, where entry \verb{(k, j) = 1} indicates variable \code{k}
+regulates variable \code{j}. If supplied, no Lasso selection is performed, and
+non-penalized regression is used instead. If \code{NULL} (default), the set of regulators (edges)
+is selected via Lasso-type penalization.}
+
+\item{nzero_thres}{A number in \link{0, 1} specifying the maximum proportion of
+nonzero regulators (edges) allowed for each variable (i.e., at most \code{p * nzero_thres}
+regulators). Only used when \code{adj_matrix} is \code{NULL}. This provides a faster
+alternative to the computationally expensive pruning process.}
+
+\item{eval_loss}{A logical value specifying whether to evaluate the loss function at each iteration.}
+
+\item{tol}{Convergence tolerance for the relative improvement in the Frobenius norm of the \eqn{\theta} matrix.}
+
+\item{max_iter}{Maximum number of iterations for the optimization.}
+
+\item{verbose}{Integer; if greater than 0, prints progress messages during optimization.}
+}
+\value{
+A list with components:
+\describe{
+\item{\code{res_theta}}{Estimated \eqn{\theta} values, with dimensions matching
+\code{theta_initial}.}
+\item{\code{res_best_kappa}}{A numeric vector of length \code{p} with selected hyperparameter
+\eqn{\kappa} values for the \eqn{\theta_j} estimation step.}
+\item{\code{res_bj}}{A numeric vector of length \code{p} with estimated \eqn{b_j}
+values.}
+\item{\code{res_cj}}{A numeric matrix (\code{n} × \code{p}) with estimated \eqn{c_j}
+values in columns.}
+\item{\code{res_best_eta}}{A numeric vector of length \code{p} with selected hyperparameter
+\eqn{\eta} values from the \eqn{F_j} estimation step (i.e., estimating \eqn{b_j} and
+\eqn{c_j}), chosen by generalized cross-validation.}
+\item{\code{res_loss_path}}{Optional list of loss values over iterations
+(present only if \code{eval_loss = TRUE}).}
+\item{\code{network_est}}{Estimated regulatory network, in the form of adjacency matrix.}
+\item{\code{num_iter}}{Number of iterations performed.}
+\item{\code{config}}{List of input arguments for reproducibility.}
+}
 }
 \description{
-This is an iterative process.
+This function implements an iterative optimization algorithm as described in the Kernel ODE paper.
+}
+\references{
+Dai, X., & Li, L. (2022). Kernel ordinary differential equations. Journal of the American Statistical Association, 117(540), 1711-1725.
 }

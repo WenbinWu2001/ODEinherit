@@ -1,22 +1,27 @@
-#' Automatically select kernel parameters for each variable.
+## ---- Exported functions ----
+
+#' Automatically Select Kernel Parameters
 #'
 #' Currently supports a data-driven bandwidth selection for the Gaussian kernel,
 #' with the following fixed settings for other kernels:
 #' - Linear kernel: no parameters.
 #' - Polynomial kernel: cubic polynomial (`intercept = 1`, `degree = 3`).
-#' - Mat$\'e$rn kernel: length-scale fixed at 1.
+#' - Matern kernel: length-scale fixed at 1.
 #'
-#' @param kernel A character string specifying the kernel to use.
 #' @inheritParams kernelODE_step1
+#' @inheritParams kernelODE_step2
 #'
 #' @return A list of length `p`, where each element is a named list of
-#'   parameters for a specific variable (e.g., `list(bandwidth = 1)`). If the
-#'   list has length 1, the same parameter set is used for all variables.
-#' @export
+#'   parameters for a specific variable (e.g., `list(bandwidth = 1)` for
+#'   Gaussian kernel). If the list has length 1, the same parameter set is used
+#'   for all variables.
 #'
 #' @examples
-#' Y <- matrix(1:12, nrow = 4, ncol = 3)  # each col is a variable
+#' set.seed(1)
+#' obs_time <- seq(0, 1, length.out = 10)
+#' Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
 #' auto_select_kernel_params("gaussian", Y)
+#' @export
 auto_select_kernel_params <- function(kernel, Y){
   if (kernel == "gaussian"){
     kernel_params <- compute_bw_gaussian(Y)
@@ -35,6 +40,98 @@ auto_select_kernel_params <- function(kernel, Y){
 }
 
 
+#' Data-driven Bandwidth Selection for Gaussian Kernel
+#'
+#' @inheritParams kernelODE_step1
+#'
+#' @returns A list of length `p`, where each element is a named list of the form
+#'   `list(bandwidth = <value>)`, containing the selected bandwidth for the
+#'   corresponding variable.
+#'
+#' @details The bandwidth is set to the median over all pairwise distances among
+#'   all sample points. When the number of possible pairs is large, a Monte
+#'   Carlo resampling of 1,000 randomly selected pairs is used to approximate
+#'   the median. This implementation adopts the bandwidth selection strategy
+#'   proposed in the references below.
+#'
+#' @references Mukherjee, S., Zhou, D. X., & Shawe-Taylor, J. (2006). Learning
+#'   coordinate covariances via gradients. Journal of Machine Learning Research,
+#'   7(3). Yang, L., Lv, S., & Wang, J. (2016).
+#'
+#'   Model-free variable selection in reproducing kernel Hilbert space. Journal
+#'   of Machine Learning Research, 17(82), 1-24.
+#'
+#'
+#' @examples
+#' set.seed(1)
+#' obs_time <- seq(0, 1, length.out = 10)
+#' Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
+#' compute_bw_gaussian(Y)
+#'
+#' @export
+compute_bw_gaussian <- function(Y){
+  ## `Y` is a matrix of shape (n, p).
+  ## compute bandwidth for each variable (column) of `Y`, as the median of all pairwise difference
+  num_MC <- 1000
+  bw_list <- lapply(1:ncol(Y), function(idx){
+    dist_vec <- rep(NA, num_MC)
+    Yj_temp<- stats::na.omit(Y[, idx])
+    for (i in 1:num_MC){
+      vec <- sample(Yj_temp, 2, replace = FALSE)
+      dist_vec[i] <- abs(vec[1] - vec[2])
+    }
+    bw <- stats::median(dist_vec)  # median of the pairwise distances
+    bw <- ifelse(bw > 0, bw, 0.01)
+    return (list(bandwidth = bw))
+  })
+
+  return (bw_list)
+}
+
+
+#' Convert theta Coefficients to Regulatory Network
+#'
+#' Converts the estimated theta coefficients (\eqn{\theta_j}'s) into an adjacency
+#' matrix representing the regulatory network between variables.
+#' Currently, only the non-interaction model (`interaction = FALSE`) is supported.
+#'
+#' @inheritParams kernelODE_step2
+#' @param res_theta A numeric matrix whose columns contain the estimated \eqn{\theta_j} values for each variable.
+#'   - If `interaction_term = FALSE`, `res_theta` must have dimensions (`p`, `p`).
+#'   - If `interaction_term = TRUE`, `res_theta` must have dimensions (`p^2`, `p`).
+#'
+#' @return A numeric adjacency matrix of dimension (`p`, `p`) representing the
+#'   regulatory network, where 1 indicates a regulatory effect and 0 indicates none.
+#'   If `interaction_term = TRUE`, a fully connected network is returned with a warning.
+#'
+#' @examples
+#' set.seed(1)
+#' p <- 3
+#' theta_mat <- matrix(runif(p^2) * rbinom(p^2, 1, 0.5), nrow = p, ncol = p)
+#' theta_to_adj_matrix(interaction_term = FALSE, res_theta = theta_mat)
+#'
+#' @export
+theta_to_adj_matrix <- function(interaction_term, res_theta){
+  p <- ncol(res_theta)
+
+  if (interaction_term & (nrow(res_theta) != p^2)) {stop("res_theta should be (p^2, p) when `interaction_term` is TRUE.")}
+  if ((!interaction_term) & (nrow(res_theta) != p)) {stop("res_theta should be (p, p) when `interaction_term` is FALSE.")}
+
+  if (!interaction_term) {  # without interaction
+    adj_matrix <- ifelse(res_theta > 0, yes = 1, no = 0)
+  } else {  # with interaction
+    # TODO: how to generate a network for model with interaction
+    warning("network construction with interaction_term not supported. Returned a fully connected network.")
+    adj_matrix <- matrix(1, nrow = p, ncol = p)
+  }
+
+  return (adj_matrix)
+}
+
+
+
+
+## ---- Internal helpers (private) ----
 .construct_tt_mean <- function(obs_time, tt){
   ## computes \bar{T}(t) evaluated at each time point t in `tt`.
   ## `obs_time` are ti's on page (10) in the paper.
@@ -74,8 +171,7 @@ auto_select_kernel_params <- function(kernel, Y){
                                y2,
                                kernel = c("gaussian", "linear", "polynomial", "matern"),
                                param = NULL){
-  ## Computes kernel values for main effects of ONE variable.
-  ## This function is a vectorized version of `kernel_main`. Mainly used for efficient construction of Sigma's.
+  ## Computes kernel values for main effects of ONE variable. Mainly used for efficient construction of Sigma's.
   ## `y1` and `y2` are two **vector** samples of the same variable of length n1 and n2 respectively.
   ## These kernel values are computed on the grid y1 x y2, thus returning a **matrix** of dimension (n1, n2). In other words, y1 is measured at n1 evenly spaced time points and y2 is measured at n2 evenly spaced time points.
   ## `param` is a single list containing the parameters for the specified kernel for this particular variable.
@@ -126,11 +222,10 @@ auto_select_kernel_params <- function(kernel, Y){
                                 l,
                                 kernel = c("gaussian", "linear", "polynomial", "matern"),
                                 kernel_params = NULL){
-  ## Computes kernel values for interaction effect between variables k and l (k is not equal to l).
-  ## This function is a vectorized version of `kernel_inter`. Mainly used for efficient construction of Sigma's.
+  ## Computes kernel values for interaction effect between variables k and l (k is not equal to l). Mainly used for efficient construction of Sigma's.
   ## `Y1` and `Y2` are two **matrix** samples of dimension (n1, p) and (n2, p) respectively. In other words, y1 is measured at n1 evenly spaced time points and y2 is measured at n2 evenly spaced time points.
   ## These kernel values are computed on the grid specified by rows of `Y1` and `Y2`, thus returning a **matrix** of dimension (n1, n2).
-  ## `kernel_params` is a list of p lists. kernel_params[[k]] contains the parameters of variable k for the specified kernel. Check `kernel_main` to see the parameters needed for each kernel.
+  ## `kernel_params` is a list of p lists. kernel_params[[k]] contains the parameters of variable k for the specified kernel.
   if (ncol(Y1) != ncol(Y2)) {stop("Y1 and Y2 should contain the same variables.")}
   if (k == l) {stop("Interaction terms are only computed between different variables.")}
   kernel <- match.arg(kernel)  # if no kernel is specified, use gaussian kernel
@@ -159,13 +254,12 @@ auto_select_kernel_params <- function(kernel, Y){
                                 interaction_term,
                                 kernel = c("gaussian", "linear", "polynomial", "matern"),
                                 kernel_params = NULL){
-  ## Computes values of kernel theta in the paper that generates the RKHS of F_j (which we estimate), specified by paragraph below Eq. (12).
-  ## This function is a vectorized version of `kernel_theta`. Mainly used for efficient construction of Sigma's.
+  ## Computes values of kernel theta in the paper that generates the RKHS of F_j (which we estimate), specified by paragraph below Eq. (12). Mainly used for efficient construction of Sigma's.
   ## `theta_j` is a vector with length p^2 if `interaction_term` == TRUE OR with length p if `interaction_term` == FALSE.
   ## When `interaction_term` == TRUE, the order of `theta_j` components (k and kl) differs from that in the paper, with the theta's of main effects on the diagonal and those of interaction effects off-diagonal, if `theta_j` is reshaped to a pxp square matrix.
   ## `Y1` and `Y2` are two **matrix** samples of dimension (n1, p) and (n2, p) respectively. In other words, `Y1` is measured at n1 evenly spaced time points and `Y2` is measured at n2 evenly spaced time points.
   ## These kernel values are computed on the grid specified by rows of `Y1` and `Y2`, thus returning a **matrix** of dimension (n1, n2).
-  ## `kernel_params` is a list of p lists. kernel_params[[k]] contains the parameters of variable k for the specified kernel. Check `kernel_main` to see the parameters needed for each kernel.
+  ## `kernel_params` is a list of p lists. kernel_params[[k]] contains the parameters of variable k for the specified kernel.
   if (ncol(Y1) != ncol(Y2)) {stop("Y1 and Y2 should contain the same variables.")}
   if (interaction_term & (length(theta_j) != ncol(Y1)^2)) {stop("interaction_term = TRUE: theta_j should have length p^2.")}
   if ((!interaction_term) & (length(theta_j) != ncol(Y1))) {stop("interaction_term = FALSE: theta_j should have length p.")}
@@ -227,7 +321,7 @@ auto_select_kernel_params <- function(kernel, Y){
   ## These kernel values are computed on the grid specified by rows of `Y1` and `Y2`.
   ## Returns an **array** of dimension (n1, n2, p^2) if `interaction_term` == TRUE or (n1, n2, p) if `interaction_term` == FALSE. The order of components (k and kl, third dimension of the array) aligns with that of `theta_j`.
   ## The third dimension of the returned array is named to indicate the effect each (n1, n2) component matrix corresponds to.
-  ## `kernel_params` is a list of p lists. kernel_params[[k]] contains the parameters of variable k for the specified kernel. Check `kernel_main` to see the parameters needed for each kernel.
+  ## `kernel_params` is a list of p lists. kernel_params[[k]] contains the parameters of variable k for the specified kernel.
   if (ncol(Y1) != ncol(Y2)) {stop("Y1 and Y2 should contain the same variables.")}
   if (length(kernel_params) == 1) {kernel_params <- replicate(ncol(Y1), kernel_params[[1]], simplify = FALSE)}  # if only one parameter set is specified, it is used for all variables
   if (length(kernel_params) != ncol(Y1)) {stop("kernel_params should be of length p.")}
@@ -278,7 +372,8 @@ auto_select_kernel_params <- function(kernel, Y){
 
 .kk_array_to_kk_theta <- function(kk_array,
                                   theta_j){
-  ## Computes values of kernel theta as the sum of `kk_array` weighted by `theta_j`.
+  ## Computes values of kernel theta as the sum of `kk_array` weighted by
+  ## `theta_j`.
   ## `kk_array` is the output from `.construct_kk_array`, of dimension (n1, n2, p) for `interaction_term` == FALSE or (n1, n2, p^2) for `interaction_term` == TRUE.
   ## `theta_j` should have the same components order (k and kl) as the third dimension of `kk_array`.
   kk_theta <- apply(sweep(kk_array,
@@ -371,44 +466,5 @@ auto_select_kernel_params <- function(kernel, Y){
     which.min(abs(vec_to - vec_from[i]))
   })
   res
-}
-
-
-#' Convert theta coefficients to a regulatory network.
-#'
-#' Converts the estimated theta coefficients ($\theta_j$'s) into an adjacency
-#' matrix representing the regulatory network between variables.
-#' Currently, only the non-interaction model (`interaction = FALSE`) is supported.
-#'
-#' @param interaction_term A logical value indicating whether the model includes interaction effects.
-#' @param res_theta A numeric matrix whose columns contain the estimated $\theta_j$ values for each variable.
-#'   - If `interaction_term = FALSE`, `res_theta` must have dimensions (`p`, `p`).
-#'   - If `interaction_term = TRUE`, `res_theta` must have dimensions (`p^2`, `p`).
-#'
-#' @return A numeric adjacency matrix of dimension (`p`, `p`) representing the
-#'   regulatory network, where 1 indicates a regulatory effect and 0 indicates none.
-#'   If `interaction_term = TRUE`, a fully connected network is returned with a warning.
-#' @export
-#'
-#' @examples
-#' set.seed(1)
-#' p <- 3
-#' theta_mat <- matrix(runif(p^2) * rbinom(p^2, 1, 0.5), nrow = p, ncol = p)
-#' theta_to_adj_matrix(interaction_term = FALSE, res_theta = theta_mat)
-theta_to_adj_matrix <- function(interaction_term, res_theta){
-  p <- ncol(res_theta)
-
-  if (interaction_term & (nrow(res_theta) != p^2)) {stop("res_theta should be (p^2, p) when `interaction_term` is TRUE.")}
-  if ((!interaction_term) & (nrow(res_theta) != p)) {stop("res_theta should be (p, p) when `interaction_term` is FALSE.")}
-
-  if (!interaction_term) {  # without interaction
-    adj_matrix <- ifelse(res_theta > 0, yes = 1, no = 0)
-  } else {  # with interaction
-    # TODO: how to generate a network for model with interaction
-    warning("network construction with interaction_term not supported. Returned a fully connected network.")
-    adj_matrix <- matrix(1, nrow = p, ncol = p)
-  }
-
-  return (adj_matrix)
 }
 

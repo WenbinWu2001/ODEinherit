@@ -2,13 +2,13 @@
 % Please edit documentation in R/pruning.R
 \name{prune_network}
 \alias{prune_network}
-\title{Pruning a network estimated by Kernel ODE.}
+\title{Prune a Network Estimated by Kernel ODE}
 \usage{
 prune_network(
   network_original,
   prune_thres = 0.05,
   depth = NULL,
-  eval_edge_R2_pruned = TRUE,
+  eval_edge_R2_pruned = FALSE,
   Y_list,
   yy_smth_list,
   obs_time_list,
@@ -19,12 +19,65 @@ prune_network(
   theta_initial_list = NULL,
   max_iter = 5,
   tol = 0.001,
+  parallel = FALSE,
+  mc.cores = NULL,
   verbose = 0
 )
 }
 \arguments{
-\item{verbose}{}
+\item{network_original}{The original network (adjacency matrix) to prune.}
+
+\item{prune_thres}{Threshold for pruning. Edges explaining less than this
+proportion of variation are removed.}
+
+\item{depth}{Maximum number of pruning steps per variable. Use \code{NULL} to
+continue pruning until all edges meet the threshold.}
+
+\item{eval_edge_R2_pruned}{A logical value. If \code{TRUE}, evaluates the contribution
+(\eqn{R^2}) of each remaining edge in the pruned network.}
+
+\item{Y_list}{A list of observed trajectories (\code{Y}), each corresponding to a sample (cell). See \code{\link[=kernelODE_step2]{kernelODE_step2()}} for the format of \code{Y}.}
+
+\item{yy_smth_list}{A list of smoothed trajectories (\code{yy_smth}).}
+
+\item{obs_time_list}{A list of standardized observation time points (\code{obs_time}).}
+
+\item{tt}{A numeric vector representing a finer time grid used for evaluating the smoothed trajectories and their derivatives.}
+
+\item{kernel}{Kernel function to use.}
+
+\item{kernel_params_list}{A list of kernel parameter lists (\code{kernel_params}).}
+
+\item{interaction_term}{A logical value specifying whether to include interaction effects in the model.}
+
+\item{theta_initial_list}{A list of initial \eqn{\theta_j} matrices for iterative optimization (\code{theta_initial}).}
+
+\item{max_iter}{Maximum number of iterations for the optimization.}
+
+\item{tol}{Convergence tolerance for the relative improvement in the Frobenius norm of the \eqn{\theta} matrix.}
+
+\item{parallel}{A logical value. If \code{TRUE}, use parallel computing (Linux/macOS only). Parallelization is applied over variables and samples.}
+
+\item{mc.cores}{An integer specifying the number of cores for parallel computing. Defaults to all but one available cores.}
+
+\item{verbose}{Integer; if greater than 0, prints progress messages during optimization.}
+}
+\value{
+A list with components:
+\describe{
+\item{res_prune_path}{History of pruning steps.}
+\item{network_pruned}{Final pruned network.}
+\item{R2_avg_mat_pruned}{\eqn{R^2} contribution per edge in the pruned network, averaged across all samples.}
+\item{R2_multi_arr_pruned}{Per-sample edge \eqn{R^2} contributions.}
+\item{config}{List of pruning configuration and inputs.}
+}
 }
 \description{
-Pruning a network estimated by Kernel ODE.
+Iteratively removes edges from an estimated network by evaluating the
+percentage of variation each edge explains in the target variable's
+trajectory. Edges explaining less than \code{prune_thres} are pruned.
+The process repeats up to \code{depth} times or until no further edges can be pruned.
+Applicable only when \code{interaction_term = FALSE}.
+
+Supports pruning using multiple samples (cells) jointly, where edge contributions (\eqn{R^2}) are averaged across samples.
 }

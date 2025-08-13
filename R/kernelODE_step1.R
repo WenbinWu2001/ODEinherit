@@ -8,7 +8,7 @@
 #' @param obs_time A numeric vector of length `n` representing observation time points.
 #' @param tt A numeric vector representing a finer time grid used for evaluating the smoothed trajectories and their derivatives.
 #'
-#' @return A list containing:
+#' @return A list with components:
 #' \describe{
 #'   \item{`yy_smth`}{A numeric matrix of dimension (`length(tt)`, `p`), where each column contains the smoothed trajectory of a variable evaluated on `tt`.}
 #'   \item{`init_vals_smth`}{A numeric vector of length `p` containing the estimated initial values (at time 0) for each variable.}
@@ -24,7 +24,7 @@
 #' # Example usage:
 #' set.seed(1)
 #' obs_time <- seq(0, 1, length.out = 10)
-#' Y <- cbind(sin(2 * pi * obs_time), cos(2 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)
+#' Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
 #' tt <- seq(0, 1, length.out = 100)
 #' result <- smoother_SS(obs_time, Y, tt)
 #' matplot(tt, result$yy_smth, type = "l", lty = 1, col = 1:2)

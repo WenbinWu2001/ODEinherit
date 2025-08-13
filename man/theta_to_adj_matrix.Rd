@@ -2,14 +2,14 @@
 % Please edit documentation in R/utils.R
 \name{theta_to_adj_matrix}
 \alias{theta_to_adj_matrix}
-\title{Convert theta coefficients to a regulatory network.}
+\title{Convert theta Coefficients to Regulatory Network}
 \usage{
 theta_to_adj_matrix(interaction_term, res_theta)
 }
 \arguments{
-\item{interaction_term}{A logical value indicating whether the model includes interaction effects.}
+\item{interaction_term}{A logical value specifying whether to include interaction effects in the model.}
 
-\item{res_theta}{A numeric matrix whose columns contain the estimated $\theta_j$ values for each variable.
+\item{res_theta}{A numeric matrix whose columns contain the estimated \eqn{\theta_j} values for each variable.
 \itemize{
 \item If \code{interaction_term = FALSE}, \code{res_theta} must have dimensions (\code{p}, \code{p}).
 \item If \code{interaction_term = TRUE}, \code{res_theta} must have dimensions (\code{p^2}, \code{p}).
@@ -21,7 +21,14 @@ regulatory network, where 1 indicates a regulatory effect and 0 indicates none.
 If \code{interaction_term = TRUE}, a fully connected network is returned with a warning.
 }
 \description{
-Converts the estimated theta coefficients ($\theta_j$'s) into an adjacency
+Converts the estimated theta coefficients (\eqn{\theta_j}'s) into an adjacency
 matrix representing the regulatory network between variables.
 Currently, only the non-interaction model (\code{interaction = FALSE}) is supported.
+}
+\examples{
+set.seed(1)
+p <- 3
+theta_mat <- matrix(runif(p^2) * rbinom(p^2, 1, 0.5), nrow = p, ncol = p)
+theta_to_adj_matrix(interaction_term = FALSE, res_theta = theta_mat)
+
 }

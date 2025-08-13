@@ -2,19 +2,20 @@
 % Please edit documentation in R/utils.R
 \name{auto_select_kernel_params}
 \alias{auto_select_kernel_params}
-\title{Automatically select kernel parameters for each variable.}
+\title{Automatically Select Kernel Parameters}
 \usage{
 auto_select_kernel_params(kernel, Y)
 }
 \arguments{
-\item{kernel}{A character string specifying the kernel to use.}
+\item{kernel}{Kernel function to use.}
 
 \item{Y}{A numeric matrix of dimension (\code{n}, \code{p}), where each column corresponds to the observed trajectory of a variable. Rows align with \code{obs_time}.}
 }
 \value{
 A list of length \code{p}, where each element is a named list of
-parameters for a specific variable (e.g., \code{list(bandwidth = 1)}). If the
-list has length 1, the same parameter set is used for all variables.
+parameters for a specific variable (e.g., \code{list(bandwidth = 1)} for
+Gaussian kernel). If the list has length 1, the same parameter set is used
+for all variables.
 }
 \description{
 Currently supports a data-driven bandwidth selection for the Gaussian kernel,
@@ -22,10 +23,12 @@ with the following fixed settings for other kernels:
 \itemize{
 \item Linear kernel: no parameters.
 \item Polynomial kernel: cubic polynomial (\code{intercept = 1}, \code{degree = 3}).
-\item Mat$\'e$rn kernel: length-scale fixed at 1.
+\item Matern kernel: length-scale fixed at 1.
 }
 }
 \examples{
-Y <- matrix(1:12, nrow = 4, ncol = 3)  # each col is a variable
+set.seed(1)
+obs_time <- seq(0, 1, length.out = 10)
+Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
 auto_select_kernel_params("gaussian", Y)
 }

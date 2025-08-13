@@ -2,13 +2,45 @@
 % Please edit documentation in R/assess_recov_traj.R
 \name{assess_recov_traj}
 \alias{assess_recov_traj}
-\title{Title}
+\title{Assess trajectory recovery performance for a single cell.}
 \usage{
 assess_recov_traj(Y, Y_est)
 }
 \arguments{
-\item{Y_est}{}
+\item{Y}{A numeric matrix of dimension (\code{n}, \code{p}) containing the observed
+trajectories for a cell.}
+
+\item{Y_est}{A numeric matrix of dimension (\code{n}, \code{p}) containing the
+trajectories recovered from Kernel ODE.}
+}
+\value{
+A list containing:
+\describe{
+\item{\code{R2}}{An overall \eqn{R^2} value (a scalar) as the average of the variable-specific \eqn{R^2} values (stored in \code{R2_per_var_vec}), representing the overall proportion of variance explained by the recovered trajectories.}
+\item{\code{R2_per_var_vec}}{A numeric vector of length \code{p} giving the variable-specific \eqn{R^2} values.}
+}
 }
 \description{
-Title
+Computes \eqn{R^2} metrics comparing observed trajectories with those
+recovered by Kernel ODE.
+}
+\details{
+The \eqn{R^2} metric for variable \eqn{j} is defined as
+\deqn{R_j^{2} = \max \left\{ 1 -
+\frac{\mathrm{MSS}_{j,\mathrm{res}}}{\mathrm{MSS}_{j,\mathrm{tot}}}, \; 0
+\right\},} where \deqn{\mathrm{MSS}_{j,\mathrm{res}} =
+\frac{1}{n}\sum_{i=1}^n \left( y_{ij} - \hat{y}_{ij} \right)^2,}
+\deqn{\mathrm{MSS}_{j,\mathrm{tot}} = \frac{1}{n}\sum_{i=1}^n \left( y_{ij} -
+\bar{y}_j \right)^2.}
+
+The overall \eqn{R^2} is the average of the variable-specific \eqn{R^2}
+values: \deqn{R^{2} = \frac{1}{p}\sum_{j=1}^{p} R_j^{2}.}
+}
+\examples{
+set.seed(1)
+obs_time <- seq(0, 1, length.out = 10)
+Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
+Y_est <- sapply(1:ncol(Y), function(j){lm(Y[,j] ~ obs_time)$fitted.values})  # linear regression
+assess_recov_traj(Y = Y, Y_est = Y_est)
+
 }
