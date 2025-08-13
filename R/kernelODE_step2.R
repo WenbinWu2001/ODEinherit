@@ -15,7 +15,6 @@
 #' @param eval_loss
 #' @param tol
 #' @param max_iter
-#' @param parallel
 #' @param verbose
 #'
 #' @returns
@@ -36,7 +35,6 @@ kernelODE_step2 <- function(Y,
                             eval_loss = FALSE,
                             tol = 0.001,
                             max_iter = 10,
-                            parallel = TRUE,
                             verbose = 0){
 
   ## kernel ODE Step 2: Iterative optimization algorithm (single sample version)
@@ -45,8 +43,6 @@ kernelODE_step2 <- function(Y,
   if (!(is.list(kernel_params) & all(sapply(kernel_params, is.list)))) {stop("kernel_params should be of a list of lists.")}  # must be a list of lists
   if (length(kernel_params) == 1) {kernel_params <- replicate(ncol(Y), kernel_params[[1]], simplify = FALSE)}  # if only one parameter set is specified, it is used for all variables
   if (length(kernel_params) != ncol(Y)) {stop("kernel_params should be of length p.")}
-
-  mc.cores <- ifelse(parallel, parallel::detectCores()-1, 1)
 
   n <- nrow(Y)
   p <- ncol(Y)
@@ -93,7 +89,7 @@ kernelODE_step2 <- function(Y,
 
     # given theta_j, estimate F_j
     if (verbose > 0) {cat("-------- estimating Fj's --------\n")}
-    res_Fj_est_list <- parallel::mclapply(1:p, FUN = function(j){
+    res_Fj_est_list <- lapply(1:p, FUN = function(j){
       Yj <- Y[,j]
       theta_j <- res_theta[,j]
       Sigma <- .construct_Sigma(Sigma_k_kl = Sigma_k_kl,
@@ -105,7 +101,7 @@ kernelODE_step2 <- function(Y,
                                           R = R,
                                           verbose = verbose)
       res_fun_est
-    }, mc.cores = mc.cores, mc.preschedule = FALSE)
+    })
 
     res_best_eta <- sapply(res_Fj_est_list, function(lst){lst$best_eta})
     res_bj <- sapply(res_Fj_est_list, function(lst){lst$bj})
@@ -114,7 +110,7 @@ kernelODE_step2 <- function(Y,
 
     # given F_j, estimate theta_j
     if (verbose > 0) {cat("-------- estimating theta_j's --------\n")}
-    res_theta_j_est_list <- parallel::mclapply(1:p, FUN = function(j){
+    res_theta_j_est_list <- lapply(1:p, FUN = function(j){
       Yj <- Y[,j]
       bj <- res_bj[j]
       cj <- res_cj[,j]
@@ -135,7 +131,7 @@ kernelODE_step2 <- function(Y,
                                              adj_col = adj_col,
                                              nzero_thres = nzero_thres)
       res_theta_j_est
-    }, mc.cores = mc.cores, mc.preschedule = FALSE)
+    })
 
     res_theta <- sapply(res_theta_j_est_list, function(lst){lst$theta_j})
     res_best_kappa <- sapply(res_theta_j_est_list, function(lst){lst$best_kappa})
@@ -143,7 +139,7 @@ kernelODE_step2 <- function(Y,
 
     # (optional) evaluate the loss function
     if (eval_loss) {
-      res_loss_iter <- parallel::mclapply(1:p, FUN = function(j){
+      res_loss_iter <- lapply(1:p, FUN = function(j){
         .compute_loss(bj = res_bj[j],
                       cj = res_cj[,j],
                       eta_j = res_best_eta[j],
@@ -158,7 +154,7 @@ kernelODE_step2 <- function(Y,
                       tt = tt,
                       Yj = Y[,j],
                       yy_smth = yy_smth)
-        }, mc.cores = mc.cores, mc.preschedule = FALSE)
+        })
 
       res_loss_path[[num_iter]] <- res_loss_iter
     }

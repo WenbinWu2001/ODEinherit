@@ -16,6 +16,10 @@ assess_recov_traj <- function(Y,
 
   if (any(dim(Y) != dim(Y_est))) {stop("Y and Y_est should share the same dimension.")}
 
+  # reshape Y if it is a numeric vector
+  if (is.vector(Y)) {Y <- matrix(Y, ncol = 1)}
+  if (is.vector(Y_est)) {Y_est <- matrix(Y_est, ncol = 1)}
+
   p <- ncol(Y)
 
   R2_per_var_vec <- sapply(1:p, function(j){

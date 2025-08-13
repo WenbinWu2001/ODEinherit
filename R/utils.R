@@ -391,9 +391,10 @@ auto_select_kernel_params <- function(kernel, Y){
 #' @export
 #'
 #' @examples
-# p <- 3
-# theta_mat <- matrix(runif(p^2) * rbinom(p^2, 1, 0.5), nrow = p, ncol = p)
-# theta_to_adj_matrix(interaction_term = FALSE, res_theta = theta_mat)
+#' set.seed(1)
+#' p <- 3
+#' theta_mat <- matrix(runif(p^2) * rbinom(p^2, 1, 0.5), nrow = p, ncol = p)
+#' theta_to_adj_matrix(interaction_term = FALSE, res_theta = theta_mat)
 theta_to_adj_matrix <- function(interaction_term, res_theta){
   p <- ncol(res_theta)
 
