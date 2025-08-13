@@ -1,5 +1,6 @@
 #' Title
 #'
+#' This is an iterative process.
 #' @param Y
 #' @param obs_time
 #' @param yy_smth
@@ -14,6 +15,7 @@
 #' @param eval_loss
 #' @param tol
 #' @param max_iter
+#' @param parallel
 #' @param verbose
 #'
 #' @returns
@@ -34,6 +36,7 @@ kernelODE_step2 <- function(Y,
                             eval_loss = FALSE,
                             tol = 0.001,
                             max_iter = 10,
+                            parallel = TRUE,
                             verbose = 0){
 
   ## kernel ODE Step 2: Iterative optimization algorithm (single sample version)
@@ -42,6 +45,8 @@ kernelODE_step2 <- function(Y,
   if (!(is.list(kernel_params) & all(sapply(kernel_params, is.list)))) {stop("kernel_params should be of a list of lists.")}  # must be a list of lists
   if (length(kernel_params) == 1) {kernel_params <- replicate(ncol(Y), kernel_params[[1]], simplify = FALSE)}  # if only one parameter set is specified, it is used for all variables
   if (length(kernel_params) != ncol(Y)) {stop("kernel_params should be of length p.")}
+
+  mc.cores <- ifelse(parallel, parallel::detectCores()-1, 1)
 
   n <- nrow(Y)
   p <- ncol(Y)
@@ -67,13 +72,11 @@ kernelODE_step2 <- function(Y,
                                   kernel = kernel,
                                   kernel_params = kernel_params)  # (len, len, p) or (len, len, p^2)
 
-  # Iterative optimization
+  # initialization: if no specified theta_initial, then initialize to 1 for all entries.
   res_bj <- rep(NA, p)
   res_cj <- matrix(NA, nrow = n, ncol = p)
   res_best_eta <- rep(NA, p)
   res_best_kappa <- rep(NA, p)  # in theta_j estimation step
-
-  # initialization: if no specified theta_initial, then initialize to 1 for all entries.
   if (is.null(theta_initial)){
     num_row <- ifelse(interaction_term, yes = p^2, no = p)
     theta_initial <- matrix(1, nrow = num_row, ncol = p)  # p^2 x p or p x p
@@ -87,31 +90,31 @@ kernelODE_step2 <- function(Y,
 
     res_theta_prev <- res_theta
 
+
     # given theta_j, estimate F_j
     if (verbose > 0) {cat("-------- estimating Fj's --------\n")}
-
-    for (j in 1:p) {
-      if (verbose > 1) {cat("Working on variable", j, "\n")}
-
+    res_Fj_est_list <- parallel::mclapply(1:p, FUN = function(j){
       Yj <- Y[,j]
       theta_j <- res_theta[,j]
       Sigma <- .construct_Sigma(Sigma_k_kl = Sigma_k_kl,
                                 theta_j = theta_j)  # update Sigma using new theta_j
-      res_fun_est <- function_estimation(Yj = Yj,
-                                         Sigma = Sigma,
-                                         Q1 = Q1,
-                                         Q2 = Q2,
-                                         R = R,
-                                         verbose = verbose)
+      res_fun_est <- .function_estimation(Yj = Yj,
+                                          Sigma = Sigma,
+                                          Q1 = Q1,
+                                          Q2 = Q2,
+                                          R = R,
+                                          verbose = verbose)
+      res_fun_est
+    }, mc.cores = mc.cores, mc.preschedule = FALSE)
 
-      res_best_eta[j] <- res_fun_est$best_eta
-      res_bj[j] <- res_fun_est$bj
-      res_cj[,j] <- res_fun_est$cj
-    }
+    res_best_eta <- sapply(res_Fj_est_list, function(lst){lst$best_eta})
+    res_bj <- sapply(res_Fj_est_list, function(lst){lst$bj})
+    res_cj <- sapply(res_Fj_est_list, function(lst){lst$cj})
+
 
     # given F_j, estimate theta_j
     if (verbose > 0) {cat("-------- estimating theta_j's --------\n")}
-    for (j in 1:p){
+    res_theta_j_est_list <- parallel::mclapply(1:p, FUN = function(j){
       Yj <- Y[,j]
       bj <- res_bj[j]
       cj <- res_cj[,j]
@@ -122,35 +125,41 @@ kernelODE_step2 <- function(Y,
 
       # non-negative lasso fit
       adj_col <- adj_matrix[,j]  # variable j corresponds to column j of the adjacency matrix. Note that `adj_col` is NULL if `adj_matrix` is NULL.
-      res_theta_j_est <- theta_j_estimation(bj = bj,
-                                            B = B,
-                                            cj = cj,
-                                            eta_j = eta_j,
-                                            G = G,
-                                            interaction_term = interaction_term,
-                                            Yj = Yj,
-                                            adj_col = adj_col,
-                                            nzero_thres = nzero_thres)
-      res_theta[,j] <- res_theta_j_est$theta_j
-      res_best_kappa[j] <- res_theta_j_est$best_kappa
-    }
+      res_theta_j_est <- .theta_j_estimation(bj = bj,
+                                             B = B,
+                                             cj = cj,
+                                             eta_j = eta_j,
+                                             G = G,
+                                             interaction_term = interaction_term,
+                                             Yj = Yj,
+                                             adj_col = adj_col,
+                                             nzero_thres = nzero_thres)
+      res_theta_j_est
+    }, mc.cores = mc.cores, mc.preschedule = FALSE)
 
+    res_theta <- sapply(res_theta_j_est_list, function(lst){lst$theta_j})
+    res_best_kappa <- sapply(res_theta_j_est_list, function(lst){lst$best_kappa})
+
+
+    # (optional) evaluate the loss function
     if (eval_loss) {
-      # compute the loss function
-      res_loss_iter <- lapply(1:p, function(j){compute_loss(bj = res_bj[j],
-                                                            cj = res_cj[,j],
-                                                            eta_j = res_best_eta[j],
-                                                            interaction_term = interaction_term,
-                                                            kappa_j = res_best_kappa[j],
-                                                            kernel = kernel,
-                                                            kernel_params = kernel_params,
-                                                            kk_array = kk_array,
-                                                            obs_time = obs_time,
-                                                            Sigma_k_kl = Sigma_k_kl,
-                                                            theta_j = res_theta[,j],
-                                                            tt = tt,
-                                                            Yj = Y[,j],
-                                                            yy_smth = yy_smth)})
+      res_loss_iter <- parallel::mclapply(1:p, FUN = function(j){
+        .compute_loss(bj = res_bj[j],
+                      cj = res_cj[,j],
+                      eta_j = res_best_eta[j],
+                      interaction_term = interaction_term,
+                      kappa_j = res_best_kappa[j],
+                      kernel = kernel,
+                      kernel_params = kernel_params,
+                      kk_array = kk_array,
+                      obs_time = obs_time,
+                      Sigma_k_kl = Sigma_k_kl,
+                      theta_j = res_theta[,j],
+                      tt = tt,
+                      Yj = Y[,j],
+                      yy_smth = yy_smth)
+        }, mc.cores = mc.cores, mc.preschedule = FALSE)
+
       res_loss_path[[num_iter]] <- res_loss_iter
     }
 
@@ -168,17 +177,16 @@ kernelODE_step2 <- function(Y,
     }
 
     if (is.na(improvement)){
-      # usually because `norm(res_theta_prev, type = "F")` is 0 (i.e. `res_theta_prev` is all 0) at the first few iterations
-      # OR because the jth column of the input network `adj_matrix` is all zero (i.e. no variable affects variable j) so that theta_j is all zero.
-      # warning("improvement is NA, iteration terminated")
-      # improvement <- 0  # break the loop by the if statement below
-      warning("improvement is NA")
-      improvement <- 2*tol  # continue
+      # This usually happens for one of two reasons:
+      # (1) `norm(res_theta_prev, type = "F")` is 0 (i.e. `res_theta_prev` is all 0) at the first few iterations, or
+      # (2) the jth column of the input network `adj_matrix` is all zero (i.e. no variable regulates variable j) so that theta_j is all zero.
+
+      # warning("improvement is NA")  # suppressed to make output cleaner
+      improvement <- 2*tol  # ignore and continue
     }
 
-    # check stopping criteria
-    if (improvement < tol) {break}
-  }  # end of for loop
+    if (improvement < tol) {break}  # check stopping criteria
+  }  # All iteration finish.
 
   # after the iterative process, truncate small components of theta_j to 0
   res_theta[res_theta < 0.01] <- 0

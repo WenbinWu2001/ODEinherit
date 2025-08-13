@@ -4,16 +4,19 @@
 #' This function serves as Step 1 in the Kernel ODE pipeline.
 #'
 #'
-#' @param Y A numeric matrix of dimension (n, p), where each column corresponds to the observed trajectory of a variable. Rows align with `obs_time`.
+#' @param Y A numeric matrix of dimension (`n`, `p`), where each column corresponds to the observed trajectory of a variable. Rows align with `obs_time`.
 #' @param obs_time A numeric vector of length `n` representing observation time points.
 #' @param tt A numeric vector representing a finer time grid used for evaluating the smoothed trajectories and their derivatives.
 #'
 #' @return A list containing:
 #' \describe{
-#'   \item{`yy_smth`}{A numeric matrix of dimension `length(tt)` × `p`, where each column contains the smoothed trajectory of a variable evaluated on `tt`.}
+#'   \item{`yy_smth`}{A numeric matrix of dimension (`length(tt)`, `p`), where each column contains the smoothed trajectory of a variable evaluated on `tt`.}
 #'   \item{`init_vals_smth`}{A numeric vector of length `p` containing the estimated initial values (at time 0) for each variable.}
-#'   \item{`deriv_smth`}{A numeric matrix of dimension `length(tt)` × `p`, where each column contains the smoothed first order derivative of a variable evaluated on `tt`.}
+#'   \item{`deriv_smth`}{A numeric matrix of dimension (`length(tt)`, `p`), where each column contains the smoothed first order derivative of a variable evaluated on `tt`.}
 #' }
+#'
+#' @references
+#' Original implementation adapted from <https://github.com/ChenShizhe/GRADE>
 #'
 #' @export
 #'
@@ -45,3 +48,5 @@ kernelODE_step1 <- function(Y, obs_time, tt){
                init_vals_smth = init_vals_smth,
                deriv_smth = deriv_smth))
 }
+
+

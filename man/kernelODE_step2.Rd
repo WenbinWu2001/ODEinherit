@@ -19,6 +19,7 @@ kernelODE_step2(
   eval_loss = FALSE,
   tol = 0.001,
   max_iter = 10,
+  parallel = TRUE,
   verbose = 0
 )
 }
@@ -26,5 +27,5 @@ kernelODE_step2(
 \item{verbose}{}
 }
 \description{
-Title
+This is an iterative process.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/pruning.R
 \name{prune_network}
 \alias{prune_network}
-\title{Title}
+\title{Pruning a network estimated by Kernel ODE.}
 \usage{
 prune_network(
   network_original,
@@ -26,5 +26,5 @@ prune_network(
 \item{verbose}{}
 }
 \description{
-Title
+Pruning a network estimated by Kernel ODE.
 }

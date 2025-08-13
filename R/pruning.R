@@ -29,7 +29,7 @@
     # given theta_j, estimate F_j
     Sigma <- .construct_Sigma(Sigma_k_kl = Sigma_k_kl,
                               theta_j = theta_j)  # update Sigma using new theta_j
-    res_fun_est <- function_estimation(Yj = Yj,
+    res_fun_est <- .function_estimation(Yj = Yj,
                                        Sigma = Sigma,
                                        Q1 = Q1,
                                        Q2 = Q2,
@@ -45,14 +45,14 @@
                       Sigma_k_kl = Sigma_k_kl)
 
     # non-negative lasso fit
-    res_theta_j_est <- theta_j_estimation(bj = bj,
-                                          B = B,
-                                          cj = cj,
-                                          eta_j = eta_j,
-                                          G = G,
-                                          interaction_term = interaction_term,
-                                          Yj = Yj,
-                                          adj_col = adj_col)
+    res_theta_j_est <- .theta_j_estimation(bj = bj,
+                                           B = B,
+                                           cj = cj,
+                                           eta_j = eta_j,
+                                           G = G,
+                                           interaction_term = interaction_term,
+                                           Yj = Yj,
+                                           adj_col = adj_col)
     theta_j<- res_theta_j_est$theta_j
 
     # At each iteration, truncate small components of theta_j to 0
@@ -62,12 +62,7 @@
     improvement <- sqrt(sum((theta_j - theta_j_prev)^2)) / sqrt(sum(theta_j_prev^2))
 
     if (is.na(improvement)){  # happens when `theta_j` is all zero.
-      # warning("improvement is NA, iteration terminated")
-      # improvement <- 0  # break the loop by the if statement below
-      warning("improvement is NA")
-      # warning(c(adj_col))  # debug
-      # warning(c(theta_j))  # debug
-      improvement <- 2*tol  # continue
+      improvement <- 2*tol  # ignore and continue
     }
 
     # check stopping criteria
@@ -260,11 +255,11 @@
     if (verbose > 0) {cat("*", ifelse(j == var_to_prune[length(var_to_prune)], "\n", ""), sep = "")}
   }
 
-  # prompt anomalies or interesting patterns
-  neg_edge_idx <- which(R2_mat < 0, arr.ind = T)  # abnormal results (deleting this edge results in a larger % variation explained in the corresponding trajectory)
+  # abnormal results (deleting this edge results in a larger % variation explained in the corresponding trajectory), likely due to overfitting (i.e., that edge is redundant)
+  neg_edge_idx <- which(R2_mat < 0, arr.ind = T)
   if (nrow(neg_edge_idx) > 0) {
-    cat("Note: R2 increases after deleting each of the following edges (row - col): ",
-        paste(neg_edge_idx[,1], neg_edge_idx[,2], sep = "-", collapse = ", "), "\n")
+    cat("Note: R2 increases after deleting each of the following edges: ",
+        paste(neg_edge_idx[,1], neg_edge_idx[,2], sep = "->", collapse = ", "), "\n")
   }
 
   # If no pruning is done, prune_edge_idx is an empty matrix with dimension (0,2).
@@ -283,7 +278,7 @@
 
 
 
-#' Title
+#' Pruning a network estimated by Kernel ODE.
 #'
 #' @param network_original
 #' @param prune_thres
@@ -391,7 +386,6 @@ prune_network <- function(network_original,
   ### Assess the recovered trajectories from the unpruned (original) network ###
   # a list of K lists each containing the MS and R2 metrics for each of the p variables
   # re-fit kernel ODE using the unpruned network
-  # TODO: Pack this step into a public function
   if (verbose > 0){cat("\n------ Computing unpruned network metrics ------\n")}
   Y_est_list <- parallel::mclapply(1:K,
                                    FUN = function(k){
@@ -582,7 +576,6 @@ prune_network <- function(network_original,
                             network_pruned = network_pruned,
                             R2_mat_pruned = R2_mat_pruned,
                             R2_mat_multi_pruned = R2_mat_multi_pruned,
-                            ### metrics and trajectories of old and new trajectories ###
                             config = list(
                               network_original = network_original,
                               prune_thres = prune_thres,

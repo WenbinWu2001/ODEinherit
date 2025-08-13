@@ -7,7 +7,7 @@
 kernelODE_step1(Y, obs_time, tt)
 }
 \arguments{
-\item{Y}{A numeric matrix of dimension (n, p), where each column corresponds to the observed trajectory of a variable. Rows align with \code{obs_time}.}
+\item{Y}{A numeric matrix of dimension (\code{n}, \code{p}), where each column corresponds to the observed trajectory of a variable. Rows align with \code{obs_time}.}
 
 \item{obs_time}{A numeric vector of length \code{n} representing observation time points.}
 
@@ -16,9 +16,9 @@ kernelODE_step1(Y, obs_time, tt)
 \value{
 A list containing:
 \describe{
-\item{\code{yy_smth}}{A numeric matrix of dimension \code{length(tt)} × \code{p}, where each column contains the smoothed trajectory of a variable evaluated on \code{tt}.}
+\item{\code{yy_smth}}{A numeric matrix of dimension (\code{length(tt)}, \code{p}), where each column contains the smoothed trajectory of a variable evaluated on \code{tt}.}
 \item{\code{init_vals_smth}}{A numeric vector of length \code{p} containing the estimated initial values (at time 0) for each variable.}
-\item{\code{deriv_smth}}{A numeric matrix of dimension \code{length(tt)} × \code{p}, where each column contains the smoothed first order derivative of a variable evaluated on \code{tt}.}
+\item{\code{deriv_smth}}{A numeric matrix of dimension (\code{length(tt)}, \code{p}), where each column contains the smoothed first order derivative of a variable evaluated on \code{tt}.}
 }
 }
 \description{
@@ -33,4 +33,7 @@ Y <- cbind(sin(2 * pi * obs_time), cos(2 * pi * obs_time)) + 0.1 * matrix(rnorm(
 tt <- seq(0, 1, length.out = 100)
 result <- smoother_SS(obs_time, Y, tt)
 matplot(tt, result$yy_smth, type = "l", lty = 1, col = 1:2)
+}
+\references{
+Original implementation adapted from \url{https://github.com/ChenShizhe/GRADE}
 }

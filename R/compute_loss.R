@@ -1,17 +1,17 @@
-compute_loss <- function(bj,
-                         cj,
-                         eta_j,
-                         interaction_term,
-                         kappa_j,
-                         kernel,
-                         kernel_params,
-                         kk_array = NULL,
-                         obs_time,
-                         Sigma_k_kl,
-                         theta_j,
-                         tt,
-                         Yj,
-                         yy_smth){
+.compute_loss <- function(bj,
+                          cj,
+                          eta_j,
+                          interaction_term,
+                          kappa_j,
+                          kernel,
+                          kernel_params,
+                          kk_array = NULL,
+                          obs_time,
+                          Sigma_k_kl,
+                          theta_j,
+                          tt,
+                          Yj,
+                          yy_smth){
   # compute the objective function value for a specific variable j
   # Eq (11) in the kernel ODE paper
 

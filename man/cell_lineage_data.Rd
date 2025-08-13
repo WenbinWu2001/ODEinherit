@@ -34,7 +34,7 @@ A dataset containing cell lineage metadata and time series of protein expression
 \details{
 Time series data were denoised using functional principal component analysis and interpolated to 5× temporal resolution using local polynomial smoothing.
 The dataset includes 25 mother cells and 60 daughter cells, each measured on a common grid of 240 time points (uniformly spaced) across the experiment (originally 48 time points before interpolation).
-In the paper, these time series are referred to as "trajectories".
+In the paper, these time series are also referred to as "trajectories".
 }
 \examples{
 data(cell_lineage_data)

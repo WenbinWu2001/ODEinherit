@@ -1,8 +1,23 @@
+#' Automatically select kernel parameters for each variable.
+#'
+#' Currently supports a data-driven bandwidth selection for the Gaussian kernel,
+#' with the following fixed settings for other kernels:
+#' - Linear kernel: no parameters.
+#' - Polynomial kernel: cubic polynomial (`intercept = 1`, `degree = 3`).
+#' - Mat$\'e$rn kernel: length-scale fixed at 1.
+#'
+#' @param kernel A character string specifying the kernel to use.
+#' @inheritParams kernelODE_step1
+#'
+#' @return A list of length `p`, where each element is a named list of
+#'   parameters for a specific variable (e.g., `list(bandwidth = 1)`). If the
+#'   list has length 1, the same parameter set is used for all variables.
+#' @export
+#'
+#' @examples
+#' Y <- matrix(1:12, nrow = 4, ncol = 3)  # each col is a variable
+#' auto_select_kernel_params("gaussian", Y)
 auto_select_kernel_params <- function(kernel, Y){
-  # auto-selecting kernel parameters for each variable
-  # `Y` is a matrix of shape (n, p).
-  # returns `kernel_params` as a list of p sublists, each sublist containing the kernel params for a variable.
-  # if `kernel_params` only contains one list, then that kernel parameter is used for all variables.
   if (kernel == "gaussian"){
     kernel_params <- compute_bw_gaussian(Y)
   } else if (kernel == "linear"){
@@ -359,8 +374,27 @@ auto_select_kernel_params <- function(kernel, Y){
 }
 
 
+#' Convert theta coefficients to a regulatory network.
+#'
+#' Converts the estimated theta coefficients ($\theta_j$'s) into an adjacency
+#' matrix representing the regulatory network between variables.
+#' Currently, only the non-interaction model (`interaction = FALSE`) is supported.
+#'
+#' @param interaction_term A logical value indicating whether the model includes interaction effects.
+#' @param res_theta A numeric matrix whose columns contain the estimated $\theta_j$ values for each variable.
+#'   - If `interaction_term = FALSE`, `res_theta` must have dimensions (`p`, `p`).
+#'   - If `interaction_term = TRUE`, `res_theta` must have dimensions (`p^2`, `p`).
+#'
+#' @return A numeric adjacency matrix of dimension (`p`, `p`) representing the
+#'   regulatory network, where 1 indicates a regulatory effect and 0 indicates none.
+#'   If `interaction_term = TRUE`, a fully connected network is returned with a warning.
+#' @export
+#'
+#' @examples
+# p <- 3
+# theta_mat <- matrix(runif(p^2) * rbinom(p^2, 1, 0.5), nrow = p, ncol = p)
+# theta_to_adj_matrix(interaction_term = FALSE, res_theta = theta_mat)
 theta_to_adj_matrix <- function(interaction_term, res_theta){
-  # `res_theta` is (p^2, p) if `interaction_term` is TRUE or (p, p) if `interaction_term` is FALSE.
   p <- ncol(res_theta)
 
   if (interaction_term & (nrow(res_theta) != p^2)) {stop("res_theta should be (p^2, p) when `interaction_term` is TRUE.")}

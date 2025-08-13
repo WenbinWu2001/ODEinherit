@@ -48,7 +48,7 @@ refit_kernel_ODE <- function(Y,
 
   # recover trajectory and compute the metrics
   obs_idx <- .map_to(obs_time, tt)
-  Y_est_refit <- sapply(1:ncol(Y), function(j){
+  Y_refit <- sapply(1:ncol(Y), function(j){
     res_traj_j <- evaluate_Fj(bj = res_KODE_refit$res_bj[j],
                               cj = res_KODE_refit$res_cj[,j],
                               interaction_term = interaction_term,
@@ -63,10 +63,10 @@ refit_kernel_ODE <- function(Y,
   })
 
   metrics <- assess_recov_traj(Y = Y,
-                               Y_est = Y_est_refit)
+                               Y_est = Y_refit)
 
   return (list(metrics = metrics,
-               Y_est_refit = Y_est_refit))
+               Y_refit = Y_refit))
 }
 
 
