@@ -19,7 +19,7 @@ This tutorial presents a toy example of **ODEinherit**, using the dataset from o
 
 A successful installation of `ODEinherit` is required. See the last section of this article for a list of all system and package dependencies used to create this tutorial.
 
-For a single mother–daughter cell pair, the pipeline should complete in under 20 minutes (using 8-cores on a Mac M1).
+For a single mother–daughter cell pair, the entire workflow typically finishes in under 20 minutes when run on 8 cores of an Apple M1 chip.
 
 
 # Overview
@@ -319,6 +319,7 @@ pi_score
 The following shows the suggested package versions that the developer (GitHub username: WenbinWu2001) used when developing the ODEinherit package.
 
 ```R
+> devtools::session_info()
 ─ Session info ───────────────────────────────────────────────────────
  setting  value
  version  R version 4.4.2 (2024-10-31)
