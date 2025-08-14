@@ -67,9 +67,9 @@ alternative to the computationally expensive pruning process.}
 \value{
 A list with components:
 \describe{
-\item{\code{res_theta}}{Estimated \eqn{\theta} values, with dimensions matching
+\item{res_theta}{Estimated \eqn{\theta} values, with dimensions matching
 \code{theta_initial}.}
-\item{\code{res_best_kappa}}{A numeric vector of length \code{p} with selected hyperparameter
+\item{res_best_kappa}{A numeric vector of length \code{p} with selected hyperparameter
 \eqn{\kappa} values for the \eqn{\theta_j} estimation step.}
 \item{\code{res_bj}}{A numeric vector of length \code{p} with estimated \eqn{b_j}
 values.}
