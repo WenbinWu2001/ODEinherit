@@ -28,11 +28,12 @@ Here we present the workflow for a single mother–daughter cell pair, the same 
 
 **Step 0: Load the package and select a mother–daughter cell pair**
 
-```{r}
-rm(list = ls())
-set.seed(1)
+```{r setup, include=FALSE}
 library(ODEinherit)
+set.seed(1)
+```
 
+```{r}
 cell_lineage_data <- ODEinherit::cell_lineage_data
 names(cell_lineage_data)
 
