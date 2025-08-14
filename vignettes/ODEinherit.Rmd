@@ -19,13 +19,15 @@ This tutorial presents a toy example of **ODEinherit**, using the dataset from o
 
 A successful installation of `ODEinherit` is required. See the last section of this article for a list of all system and package dependencies used to create this tutorial.
 
-For a single mother–daughter cell pair, the pipeline should complete in under 15 minutes.
+For a single mother–daughter cell pair, the pipeline should complete in under 20 minutes (using 8-cores on a Mac M1).
+
 
 # Overview
 Here we present the workflow for a single mother–daughter cell pair, the same pair used to create Figure 2 in the paper. See `?cell_lineage_data` for more details about the dataset.
 
 
 **Step 0: Load the package and select a mother–daughter cell pair**
+
 ```{r}
 rm(list = ls())
 set.seed(1)
@@ -214,6 +216,7 @@ tt_D <- res_KernelODE_D$tt
 ```
 
 **Step 2: Evaluate networks via daughter trajectory recovery** 
+
 We refit KernelODE to recover the daughter trajectories using the mother-derived and daughter-derived networks, respectively, to evaluate how well each explains variation in the daughter trajectories. Goodness-of-fit is quantified using a heuristic $R^2$ metric.
 
 ```{r}
