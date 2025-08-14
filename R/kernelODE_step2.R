@@ -28,11 +28,11 @@
 #'
 #' @returns A list with components:
 #' \describe{
-#'   \item{`res_theta`}{Estimated \eqn{\theta} values, with dimensions matching
+#'   \item{res_theta}{Estimated \eqn{\theta} values, with dimensions matching
 #'   `theta_initial`.}
-#'   \item{`res_best_kappa`}{A numeric vector of length `p` with selected hyperparameter
+#'   \item{res_best_kappa}{A numeric vector of length `p` with selected hyperparameter
 #'   \eqn{\kappa} values for the \eqn{\theta_j} estimation step.}
-#'   \item{`res_bj`}{A numeric vector of length `p` with estimated \eqn{b_j}
+#'   \item{\code{res_bj}}{A numeric vector of length `p` with estimated \eqn{b_j}
 #'   values.}
 #'   \item{`res_cj`}{A numeric matrix (`n` × `p`) with estimated \eqn{c_j}
 #'   values in columns.}
