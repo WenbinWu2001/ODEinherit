@@ -27,7 +27,7 @@ prune_network(
 \arguments{
 \item{network_original}{The original network (adjacency matrix) to prune.}
 
-\item{prune_thres}{Threshold for pruning. Edges explaining less than this
+\item{prune_thres}{A number in \verb{[0, 1]} that specifies the threshold for pruning. Edges explaining less than this
 proportion of variation are removed.}
 
 \item{depth}{Maximum number of pruning steps per variable. Use \code{NULL} to
@@ -48,28 +48,31 @@ continue pruning until all edges meet the threshold.}
 
 \item{kernel_params_list}{A list of kernel parameter lists (\code{kernel_params}).}
 
-\item{interaction_term}{A logical value specifying whether to include interaction effects in the model.}
+\item{interaction_term}{A logical value specifying whether to include
+interaction effects in the model.}
 
 \item{theta_initial_list}{A list of initial \eqn{\theta_j} matrices for iterative optimization (\code{theta_initial}).}
 
 \item{max_iter}{Maximum number of iterations for the optimization.}
 
-\item{tol}{Convergence tolerance for the relative improvement in the Frobenius norm of the \eqn{\theta} matrix.}
+\item{tol}{Convergence tolerance for the relative improvement in the
+Frobenius norm of the \eqn{\theta} matrix.}
 
 \item{parallel}{A logical value. If \code{TRUE}, use parallel computing (Linux/macOS only). Parallelization is applied over variables and samples.}
 
 \item{mc.cores}{An integer specifying the number of cores for parallel computing. Defaults to all but one available cores.}
 
-\item{verbose}{Integer; if greater than 0, prints progress messages during optimization.}
+\item{verbose}{Integer; if greater than 0, prints progress messages during
+optimization.}
 }
 \value{
 A list with components:
 \describe{
-\item{res_prune_path}{History of pruning steps.}
-\item{network_pruned}{Final pruned network.}
-\item{R2_avg_mat_pruned}{\eqn{R^2} contribution per edge in the pruned network, averaged across all samples.}
-\item{R2_multi_arr_pruned}{Per-sample edge \eqn{R^2} contributions.}
-\item{config}{List of pruning configuration and inputs.}
+\item{\code{res_prune_path}}{History of pruning steps.}
+\item{\code{network_pruned}}{Final pruned network.}
+\item{\code{R2_avg_mat_pruned}}{\eqn{R^2} contribution per edge in the pruned network, averaged across all samples.}
+\item{\code{R2_multi_arr_pruned}}{Per-sample edge \eqn{R^2} contributions.}
+\item{\code{config}}{List of pruning configuration and inputs.}
 }
 }
 \description{

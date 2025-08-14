@@ -25,13 +25,16 @@ evaluate_Fj(
 \item{cj}{A numeric vector of length \code{n}, giving the estimated \eqn{c_j} from
 Kernel ODE (i.e., \code{res_cj[,j]}).}
 
-\item{interaction_term}{A logical value specifying whether to include interaction effects in the model.}
+\item{interaction_term}{A logical value specifying whether to include
+interaction effects in the model.}
 
 \item{kernel}{Kernel function to use.}
 
-\item{kernel_params}{A list of length \code{p}, where each element is a named list of
-parameters for a specific variable (e.g., \code{list(bandwidth = 1)} for Gaussian kernel). If the
-list has length 1, the same parameter set is used for all variables. This is typically the output of \code{\link[=auto_select_kernel_params]{auto_select_kernel_params()}}.}
+\item{kernel_params}{A list of length \code{p}, where each element is a named list
+of parameters for a specific variable (e.g., \code{list(bandwidth = 1)} for
+Gaussian kernel). If the list has length 1, the same parameter set is used
+for all variables. This is typically the output of
+\code{\link[=auto_select_kernel_params]{auto_select_kernel_params()}}.}
 
 \item{kk_array}{Optional precomputed kernel array on \code{tt}. An array of
 dimension (\code{len}, \code{len}, \code{p}) when \code{interaction_term = FALSE}, or (\code{len},
@@ -74,6 +77,42 @@ constructs the kernel-weighted integral operator on the grid \code{tt} to evalua
 \eqn{F_j}, estimates the initial condition \eqn{\theta_{j0}}, then recovers
 the trajectory via cumulative summation on \code{tt} (first-order approximation).
 When provided, \code{kk_array} is reused to avoid recomputing kernel blocks.
+}
+\examples{
+set.seed(1)
+obs_time <- seq(0, 1, length.out = 10)
+Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
+tt <- seq(0, 1, length.out = 100)
+res_step1 <- kernelODE_step1(Y = Y, obs_time = obs_time, tt = tt)
+
+kernel <- "gaussian"
+kernel_params <- auto_select_kernel_params(kernel = kernel, Y = Y)
+res_step2 <- kernelODE_step2(Y = Y, obs_time = obs_time, yy_smth = res_step1$yy_smth, tt = tt, kernel = kernel, kernel_params = kernel_params)
+
+j <- 1  # evaluate Fj for the first variable
+res_eval <- evaluate_Fj(bj = res_step2$res_bj[j],
+                        cj = res_step2$res_cj[,j],
+                        interaction_term = F,
+                        kernel = kernel,
+                        kernel_params = kernel_params,
+                        obs_time = obs_time,
+                        theta_j = res_step2$res_theta[,j],
+                        tt = tt,
+                        Yj = Y[,j],
+                        yy_smth = res_step1$yy_smth)
+yy_j_est <- res_eval$yy_est
+
+# plot the evaluated traj
+plot(NA, type = "n",
+     xlab = "Time index", ylab = "Value",
+     xlim = c(0,1), ylim = range(c(yy_j_est, Y[,j]), na.rm = T))
+lines(obs_time, Y[,j], lty = 1)
+lines(tt, yy_j_est, lty = 2)
+legend("topright",
+       legend = c("obs.", "eval."),
+       lty = c(1,2),
+       col = "black")
+
 }
 \seealso{
 \code{\link[=kernelODE_step1]{kernelODE_step1()}}, \code{\link[=kernelODE_step2]{kernelODE_step2()}}, \code{\link[=assess_recov_traj]{assess_recov_traj()}}

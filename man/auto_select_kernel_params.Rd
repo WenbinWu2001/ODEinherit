@@ -31,4 +31,5 @@ set.seed(1)
 obs_time <- seq(0, 1, length.out = 10)
 Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
 auto_select_kernel_params("gaussian", Y)
+
 }

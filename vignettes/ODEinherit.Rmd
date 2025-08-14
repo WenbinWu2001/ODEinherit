@@ -96,7 +96,7 @@ The ODE regulatory network for each cell is estimated *separately* using KernelO
 Before applying KernelODE, we:
 
 - Remove the portion of each trajectory before cell birth.
-- Standardize the observation time points to the interval [0, 1] for each cell.
+- Standardize the observation time points to the interval `[0, 1]` for each cell.
 - Remove the linear trend in the time series to adjust for time effects.
 
 In **Step 1** of KernelODE, we fit cubic smoothing splines to obtain smoothed trajectory estimates.  

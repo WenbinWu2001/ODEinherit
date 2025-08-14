@@ -24,7 +24,7 @@
 #'   regulates variable `j`. If supplied, no Lasso selection is performed, and
 #'   non-penalized regression is used instead. If `NULL` (default), the set of
 #'   regulators (edges) is selected via Lasso-type penalization.
-#' @param nzero_thres A number in [0, 1] specifying the maximum proportion of
+#' @param nzero_thres A number in `[0, 1]` specifying the maximum proportion of
 #'   nonzero regulators (edges) allowed for each variable (i.e., at most `p *
 #'   nzero_thres` regulators). Only used when `adj_matrix` is `NULL`. This
 #'   provides a faster alternative to the computationally expensive pruning

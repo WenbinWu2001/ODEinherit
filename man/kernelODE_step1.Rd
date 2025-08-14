@@ -31,7 +31,7 @@ set.seed(1)
 obs_time <- seq(0, 1, length.out = 10)
 Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
 tt <- seq(0, 1, length.out = 100)
-result <- smoother_SS(obs_time, Y, tt)
+result <- kernelODE_step1(Y = Y, obs_time = obs_time, tt = tt)
 matplot(tt, result$yy_smth, type = "l", lty = 1, col = 1:2)
 }
 \references{

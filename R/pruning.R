@@ -12,7 +12,7 @@
 #'
 #' @inheritParams kernelODE_step2
 #' @param network_original The original network (adjacency matrix) to prune.
-#' @param prune_thres Threshold for pruning. Edges explaining less than this
+#' @param prune_thres A number in `[0, 1]` that specifies the threshold for pruning. Edges explaining less than this
 #'   proportion of variation are removed.
 #' @param depth Maximum number of pruning steps per variable. Use `NULL` to
 #'   continue pruning until all edges meet the threshold.
@@ -28,11 +28,11 @@
 #'
 #' @returns A list with components:
 #' \describe{
-#'   \item{res_prune_path}{History of pruning steps.}
-#'   \item{network_pruned}{Final pruned network.}
-#'   \item{R2_avg_mat_pruned}{\eqn{R^2} contribution per edge in the pruned network, averaged across all samples.}
-#'   \item{R2_multi_arr_pruned}{Per-sample edge \eqn{R^2} contributions.}
-#'   \item{config}{List of pruning configuration and inputs.}
+#'   \item{`res_prune_path`}{History of pruning steps.}
+#'   \item{`network_pruned`}{Final pruned network.}
+#'   \item{`R2_avg_mat_pruned`}{\eqn{R^2} contribution per edge in the pruned network, averaged across all samples.}
+#'   \item{`R2_multi_arr_pruned`}{Per-sample edge \eqn{R^2} contributions.}
+#'   \item{`config`}{List of pruning configuration and inputs.}
 #' }
 #'
 #' @export

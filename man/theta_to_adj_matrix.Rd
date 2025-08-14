@@ -7,7 +7,8 @@
 theta_to_adj_matrix(interaction_term, res_theta)
 }
 \arguments{
-\item{interaction_term}{A logical value specifying whether to include interaction effects in the model.}
+\item{interaction_term}{A logical value specifying whether to include
+interaction effects in the model.}
 
 \item{res_theta}{A numeric matrix whose columns contain the estimated \eqn{\theta_j} values for each variable.
 \itemize{

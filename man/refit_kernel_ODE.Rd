@@ -25,17 +25,22 @@ refit_kernel_ODE(
 
 \item{obs_time}{A numeric vector of length \code{n} representing observation time points.}
 
-\item{yy_smth}{A numeric matrix of dimension (\code{length(tt)}, \code{p}), where each column contains the smoothed trajectory of a variable evaluated on \code{tt}. This is typically the output of \code{\link[=kernelODE_step1]{kernelODE_step1()}}.}
+\item{yy_smth}{A numeric matrix of dimension (\code{length(tt)}, \code{p}), where each
+column contains the smoothed trajectory of a variable evaluated on \code{tt}.
+This is typically the output of \code{\link[=kernelODE_step1]{kernelODE_step1()}}.}
 
 \item{tt}{A numeric vector representing a finer time grid used for evaluating the smoothed trajectories and their derivatives.}
 
 \item{kernel}{Kernel function to use.}
 
-\item{kernel_params}{A list of length \code{p}, where each element is a named list of
-parameters for a specific variable (e.g., \code{list(bandwidth = 1)} for Gaussian kernel). If the
-list has length 1, the same parameter set is used for all variables. This is typically the output of \code{\link[=auto_select_kernel_params]{auto_select_kernel_params()}}.}
+\item{kernel_params}{A list of length \code{p}, where each element is a named list
+of parameters for a specific variable (e.g., \code{list(bandwidth = 1)} for
+Gaussian kernel). If the list has length 1, the same parameter set is used
+for all variables. This is typically the output of
+\code{\link[=auto_select_kernel_params]{auto_select_kernel_params()}}.}
 
-\item{interaction_term}{A logical value specifying whether to include interaction effects in the model.}
+\item{interaction_term}{A logical value specifying whether to include
+interaction effects in the model.}
 
 \item{adj_matrix}{An adjacency matrix (\code{p} × \code{p}) representing the regulatory
 network to use for refitting. Entry \verb{(k, j) = 1} indicates variable \code{k}
@@ -44,23 +49,26 @@ estimation. If \code{NULL}, defaults to a fully connected network.
 Although technically possible, this function is \emph{not} intended for
 estimating \eqn{F_j} or inferring a regulatory network.}
 
-\item{theta_initial}{A numeric matrix containing the initial \eqn{\theta_j} values for each variable at the start of optimization:
+\item{theta_initial}{A numeric matrix containing the initial \eqn{\theta_j}
+values for each variable at the start of optimization:
 \itemize{
 \item If \code{interaction_term = FALSE}, \code{theta_initial} must have dimensions (\code{p}, \code{p}).
 \item If \code{interaction_term = TRUE}, \code{theta_initial} must have dimensions (\code{p^2}, \code{p}).
 If \code{NULL}, defaults to all ones.
 }}
 
-\item{nzero_thres}{A number in \link{0, 1} specifying the maximum proportion of
-nonzero regulators (edges) allowed for each variable (i.e., at most \code{p * nzero_thres}
-regulators). Only used when \code{adj_matrix} is \code{NULL}. This provides a faster
-alternative to the computationally expensive pruning process.}
+\item{nzero_thres}{A number in \verb{[0, 1]} specifying the maximum proportion of
+nonzero regulators (edges) allowed for each variable (i.e., at most \code{p * nzero_thres} regulators). Only used when \code{adj_matrix} is \code{NULL}. This
+provides a faster alternative to the computationally expensive pruning
+process.}
 
-\item{tol}{Convergence tolerance for the relative improvement in the Frobenius norm of the \eqn{\theta} matrix.}
+\item{tol}{Convergence tolerance for the relative improvement in the
+Frobenius norm of the \eqn{\theta} matrix.}
 
 \item{max_iter}{Maximum number of iterations for the optimization.}
 
-\item{verbose}{Integer; if greater than 0, prints progress messages during optimization.}
+\item{verbose}{Integer; if greater than 0, prints progress messages during
+optimization.}
 }
 \value{
 A list with components:
@@ -74,4 +82,41 @@ format as \code{Y}.}
 }
 \description{
 Refits the Kernel ODE model using a pre-specified regulatory network, bypassing the network estimation step.
+}
+\examples{
+set.seed(1)
+obs_time <- seq(0, 1, length.out = 10)
+Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
+tt <- seq(0, 1, length.out = 100)
+res_step1 <- kernelODE_step1(Y = Y, obs_time = obs_time, tt = tt)
+
+kernel <- "gaussian"
+kernel_params <- auto_select_kernel_params(kernel = kernel, Y = Y)
+res_step2 <- kernelODE_step2(Y = Y, obs_time = obs_time, yy_smth = res_step1$yy_smth, tt = tt, kernel = kernel, kernel_params = kernel_params)
+network_est <- res_step2$network_est
+
+# refit Kernel ODE using the estimated network
+res_refit <- refit_kernel_ODE(Y = Y,
+                              obs_time = obs_time,
+                              yy_smth = res_step1$yy_smth,
+                              tt = tt,
+                              kernel = kernel,
+                              kernel_params = kernel_params,
+                              interaction_term = F,
+                              adj_matrix = network_est)  # the estimated network
+(metrics <- res_refit$metrics)
+Y_refit <- res_refit$Y_refit
+
+# plot the recovered traj
+j <- 1
+plot(NA, type = "n",
+     xlab = "Time index", ylab = "Value",
+     xlim = c(0,1), ylim = range(c(Y_refit[,j], Y[,j]), na.rm = T))
+lines(obs_time, Y[,j], lty = 1)
+lines(obs_time, Y_refit[,j], lty = 2)
+legend("topright",
+       legend = c("obs.", "recov."),
+       lty = c(1,2),
+       col = "black")
+
 }

@@ -26,19 +26,25 @@ kernelODE_step2(
 
 \item{obs_time}{A numeric vector of length \code{n} representing observation time points.}
 
-\item{yy_smth}{A numeric matrix of dimension (\code{length(tt)}, \code{p}), where each column contains the smoothed trajectory of a variable evaluated on \code{tt}. This is typically the output of \code{\link[=kernelODE_step1]{kernelODE_step1()}}.}
+\item{yy_smth}{A numeric matrix of dimension (\code{length(tt)}, \code{p}), where each
+column contains the smoothed trajectory of a variable evaluated on \code{tt}.
+This is typically the output of \code{\link[=kernelODE_step1]{kernelODE_step1()}}.}
 
 \item{tt}{A numeric vector representing a finer time grid used for evaluating the smoothed trajectories and their derivatives.}
 
 \item{kernel}{Kernel function to use.}
 
-\item{kernel_params}{A list of length \code{p}, where each element is a named list of
-parameters for a specific variable (e.g., \code{list(bandwidth = 1)} for Gaussian kernel). If the
-list has length 1, the same parameter set is used for all variables. This is typically the output of \code{\link[=auto_select_kernel_params]{auto_select_kernel_params()}}.}
+\item{kernel_params}{A list of length \code{p}, where each element is a named list
+of parameters for a specific variable (e.g., \code{list(bandwidth = 1)} for
+Gaussian kernel). If the list has length 1, the same parameter set is used
+for all variables. This is typically the output of
+\code{\link[=auto_select_kernel_params]{auto_select_kernel_params()}}.}
 
-\item{interaction_term}{A logical value specifying whether to include interaction effects in the model.}
+\item{interaction_term}{A logical value specifying whether to include
+interaction effects in the model.}
 
-\item{theta_initial}{A numeric matrix containing the initial \eqn{\theta_j} values for each variable at the start of optimization:
+\item{theta_initial}{A numeric matrix containing the initial \eqn{\theta_j}
+values for each variable at the start of optimization:
 \itemize{
 \item If \code{interaction_term = FALSE}, \code{theta_initial} must have dimensions (\code{p}, \code{p}).
 \item If \code{interaction_term = TRUE}, \code{theta_initial} must have dimensions (\code{p^2}, \code{p}).
@@ -48,35 +54,37 @@ If \code{NULL}, defaults to all ones.
 \item{adj_matrix}{An adjacency matrix (\code{p} × \code{p}) representing a fixed
 regulatory network, where entry \verb{(k, j) = 1} indicates variable \code{k}
 regulates variable \code{j}. If supplied, no Lasso selection is performed, and
-non-penalized regression is used instead. If \code{NULL} (default), the set of regulators (edges)
-is selected via Lasso-type penalization.}
+non-penalized regression is used instead. If \code{NULL} (default), the set of
+regulators (edges) is selected via Lasso-type penalization.}
 
-\item{nzero_thres}{A number in \link{0, 1} specifying the maximum proportion of
-nonzero regulators (edges) allowed for each variable (i.e., at most \code{p * nzero_thres}
-regulators). Only used when \code{adj_matrix} is \code{NULL}. This provides a faster
-alternative to the computationally expensive pruning process.}
+\item{nzero_thres}{A number in \verb{[0, 1]} specifying the maximum proportion of
+nonzero regulators (edges) allowed for each variable (i.e., at most \code{p * nzero_thres} regulators). Only used when \code{adj_matrix} is \code{NULL}. This
+provides a faster alternative to the computationally expensive pruning
+process.}
 
-\item{eval_loss}{A logical value specifying whether to evaluate the loss function at each iteration.}
+\item{eval_loss}{A logical value specifying whether to evaluate the loss
+function at each iteration.}
 
-\item{tol}{Convergence tolerance for the relative improvement in the Frobenius norm of the \eqn{\theta} matrix.}
+\item{tol}{Convergence tolerance for the relative improvement in the
+Frobenius norm of the \eqn{\theta} matrix.}
 
 \item{max_iter}{Maximum number of iterations for the optimization.}
 
-\item{verbose}{Integer; if greater than 0, prints progress messages during optimization.}
+\item{verbose}{Integer; if greater than 0, prints progress messages during
+optimization.}
 }
 \value{
 A list with components:
 \describe{
-\item{res_theta}{Estimated \eqn{\theta} values, with dimensions matching
-\code{theta_initial}.}
-\item{res_best_kappa}{A numeric vector of length \code{p} with selected hyperparameter
-\eqn{\kappa} values for the \eqn{\theta_j} estimation step.}
+\item{\code{res_theta}}{A numeric matrix giving the estimated \eqn{\theta_j} values, with each column corresponding to one variable \eqn{j}. It dimension matches that of \code{theta_initial}.}
+\item{\code{res_best_kappa}}{A numeric vector of length \code{p} with selected hyperparameter
+\eqn{\kappa_j} values for the \eqn{\theta_j} estimation step.}
 \item{\code{res_bj}}{A numeric vector of length \code{p} with estimated \eqn{b_j}
 values.}
 \item{\code{res_cj}}{A numeric matrix (\code{n} × \code{p}) with estimated \eqn{c_j}
 values in columns.}
 \item{\code{res_best_eta}}{A numeric vector of length \code{p} with selected hyperparameter
-\eqn{\eta} values from the \eqn{F_j} estimation step (i.e., estimating \eqn{b_j} and
+\eqn{\eta_j} values from the \eqn{F_j} estimation step (i.e., estimating \eqn{b_j} and
 \eqn{c_j}), chosen by generalized cross-validation.}
 \item{\code{res_loss_path}}{Optional list of loss values over iterations
 (present only if \code{eval_loss = TRUE}).}
@@ -86,8 +94,24 @@ values in columns.}
 }
 }
 \description{
-This function implements an iterative optimization algorithm as described in the Kernel ODE paper.
+This function implements an iterative optimization algorithm as described in
+the Kernel ODE paper.
+}
+\examples{
+set.seed(1)
+obs_time <- seq(0, 1, length.out = 10)
+Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
+tt <- seq(0, 1, length.out = 100)
+res_step1 <- kernelODE_step1(Y = Y, obs_time = obs_time, tt = tt)
+
+kernel <- "gaussian"
+kernel_params <- auto_select_kernel_params(kernel = kernel, Y = Y)
+res_step2 <- kernelODE_step2(Y = Y, obs_time = obs_time, yy_smth = res_step1$yy_smth, tt = tt, kernel = kernel, kernel_params = kernel_params, interaction_term = FALSE)
+network_est <- res_step2$network_est
+network_est
+
 }
 \references{
-Dai, X., & Li, L. (2022). Kernel ordinary differential equations. Journal of the American Statistical Association, 117(540), 1711-1725.
+Dai, X., & Li, L. (2022). Kernel ordinary differential equations.
+Journal of the American Statistical Association, 117(540), 1711-1725.
 }
