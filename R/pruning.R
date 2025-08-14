@@ -35,7 +35,6 @@
 #'   \item{config}{List of pruning configuration and inputs.}
 #' }
 #'
-#' @examples
 #' @export
 prune_network <- function(network_original,
                           prune_thres = 0.05,

@@ -17,9 +17,44 @@
 #'   \item{`Y_refit`}{Recovered trajectories from the refitted model, in the same
 #'     format as `Y`.}
 #'   }
-#' @export
 #'
 #' @examples
+#' set.seed(1)
+#' obs_time <- seq(0, 1, length.out = 10)
+#' Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
+#' tt <- seq(0, 1, length.out = 100)
+#' res_step1 <- kernelODE_step1(Y = Y, obs_time = obs_time, tt = tt)
+#'
+#' kernel <- "gaussian"
+#' kernel_params <- auto_select_kernel_params(kernel = kernel, Y = Y)
+#' res_step2 <- kernelODE_step2(Y = Y, obs_time = obs_time, yy_smth = res_step1$yy_smth, tt = tt, kernel = kernel, kernel_params = kernel_params)
+#' network_est <- res_step2$network_est
+#'
+#' # refit Kernel ODE using the estimated network
+#' res_refit <- refit_kernel_ODE(Y = Y,
+#'                               obs_time = obs_time,
+#'                               yy_smth = res_step1$yy_smth,
+#'                               tt = tt,
+#'                               kernel = kernel,
+#'                               kernel_params = kernel_params,
+#'                               interaction_term = F,
+#'                               adj_matrix = network_est)  # the estimated network
+#' (metrics <- res_refit$metrics)
+#' Y_refit <- res_refit$Y_refit
+#'
+#' # plot the recovered traj
+#' j <- 1
+#' plot(NA, type = "n",
+#'      xlab = "Time index", ylab = "Value",
+#'      xlim = c(0,1), ylim = range(c(Y_refit[,j], Y[,j]), na.rm = T))
+#' lines(obs_time, Y[,j], lty = 1)
+#' lines(obs_time, Y_refit[,j], lty = 2)
+#' legend("topright",
+#'        legend = c("obs.", "recov."),
+#'        lty = c(1,2),
+#'        col = "black")
+#'
+#' @export
 refit_kernel_ODE <- function(Y,
                              obs_time,
                              yy_smth,

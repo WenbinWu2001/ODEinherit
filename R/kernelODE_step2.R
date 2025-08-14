@@ -48,6 +48,17 @@
 #'
 #'
 #' @examples
+#' set.seed(1)
+#' obs_time <- seq(0, 1, length.out = 10)
+#' Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
+#' tt <- seq(0, 1, length.out = 100)
+#' res_step1 <- kernelODE_step1(Y = Y, obs_time = obs_time, tt = tt)
+#'
+#' kernel <- "gaussian"
+#' kernel_params <- auto_select_kernel_params(kernel = kernel, Y = Y)
+#' res_step2 <- kernelODE_step2(Y = Y, obs_time = obs_time, yy_smth = res_step1$yy_smth, tt = tt, kernel = kernel, kernel_params = kernel_params, interaction_term = FALSE)
+#' network_est <- res_step2$network_est
+#' network_est
 #'
 #' @references
 #' Dai, X., & Li, L. (2022). Kernel ordinary differential equations. Journal of the American Statistical Association, 117(540), 1711-1725.
