@@ -1,43 +1,53 @@
 #' Derivative Function Estimation (Step 2 of Kernel ODE)
 #'
-#' This function implements an iterative optimization algorithm as described in the Kernel ODE paper.
+#' This function implements an iterative optimization algorithm as described in
+#' the Kernel ODE paper.
 #' @inheritParams kernelODE_step1
-#' @param yy_smth A numeric matrix of dimension (`length(tt)`, `p`), where each column contains the smoothed trajectory of a variable evaluated on `tt`. This is typically the output of [kernelODE_step1()].
+#' @param yy_smth A numeric matrix of dimension (`length(tt)`, `p`), where each
+#'   column contains the smoothed trajectory of a variable evaluated on `tt`.
+#'   This is typically the output of [kernelODE_step1()].
 #' @param kernel Kernel function to use.
-#' @param kernel_params A list of length `p`, where each element is a named list of
-#'   parameters for a specific variable (e.g., `list(bandwidth = 1)` for Gaussian kernel). If the
-#'   list has length 1, the same parameter set is used for all variables. This is typically the output of [auto_select_kernel_params()].
-#' @param interaction_term A logical value specifying whether to include interaction effects in the model.
-#' @param theta_initial A numeric matrix containing the initial \eqn{\theta_j} values for each variable at the start of optimization:
+#' @param kernel_params A list of length `p`, where each element is a named list
+#'   of parameters for a specific variable (e.g., `list(bandwidth = 1)` for
+#'   Gaussian kernel). If the list has length 1, the same parameter set is used
+#'   for all variables. This is typically the output of
+#'   [auto_select_kernel_params()].
+#' @param interaction_term A logical value specifying whether to include
+#'   interaction effects in the model.
+#' @param theta_initial A numeric matrix containing the initial \eqn{\theta_j}
+#'   values for each variable at the start of optimization:
 #'   - If `interaction_term = FALSE`, `theta_initial` must have dimensions (`p`, `p`).
 #'   - If `interaction_term = TRUE`, `theta_initial` must have dimensions (`p^2`, `p`).
-#' If `NULL`, defaults to all ones.
+#'   If `NULL`, defaults to all ones.
 #' @param adj_matrix An adjacency matrix (`p` × `p`) representing a fixed
 #'   regulatory network, where entry `(k, j) = 1` indicates variable `k`
 #'   regulates variable `j`. If supplied, no Lasso selection is performed, and
-#'   non-penalized regression is used instead. If `NULL` (default), the set of regulators (edges)
-#'   is selected via Lasso-type penalization.
+#'   non-penalized regression is used instead. If `NULL` (default), the set of
+#'   regulators (edges) is selected via Lasso-type penalization.
 #' @param nzero_thres A number in [0, 1] specifying the maximum proportion of
-#'   nonzero regulators (edges) allowed for each variable (i.e., at most `p * nzero_thres`
-#'   regulators). Only used when `adj_matrix` is `NULL`. This provides a faster
-#'   alternative to the computationally expensive pruning process.
-#' @param eval_loss A logical value specifying whether to evaluate the loss function at each iteration.
-#' @param tol Convergence tolerance for the relative improvement in the Frobenius norm of the \eqn{\theta} matrix.
+#'   nonzero regulators (edges) allowed for each variable (i.e., at most `p *
+#'   nzero_thres` regulators). Only used when `adj_matrix` is `NULL`. This
+#'   provides a faster alternative to the computationally expensive pruning
+#'   process.
+#' @param eval_loss A logical value specifying whether to evaluate the loss
+#'   function at each iteration.
+#' @param tol Convergence tolerance for the relative improvement in the
+#'   Frobenius norm of the \eqn{\theta} matrix.
 #' @param max_iter Maximum number of iterations for the optimization.
-#' @param verbose Integer; if greater than 0, prints progress messages during optimization.
+#' @param verbose Integer; if greater than 0, prints progress messages during
+#'   optimization.
 #'
 #' @returns A list with components:
 #' \describe{
-#'   \item{res_theta}{Estimated \eqn{\theta} values, with dimensions matching
-#'   `theta_initial`.}
-#'   \item{res_best_kappa}{A numeric vector of length `p` with selected hyperparameter
-#'   \eqn{\kappa} values for the \eqn{\theta_j} estimation step.}
-#'   \item{\code{res_bj}}{A numeric vector of length `p` with estimated \eqn{b_j}
+#'   \item{`res_theta`}{A numeric matrix giving the estimated \eqn{\theta_j} values, with each column corresponding to one variable \eqn{j}. It dimension matches that of `theta_initial`.}
+#'   \item{`res_best_kappa`}{A numeric vector of length `p` with selected hyperparameter
+#'   \eqn{\kappa_j} values for the \eqn{\theta_j} estimation step.}
+#'   \item{`res_bj`}{A numeric vector of length `p` with estimated \eqn{b_j}
 #'   values.}
 #'   \item{`res_cj`}{A numeric matrix (`n` × `p`) with estimated \eqn{c_j}
 #'   values in columns.}
 #'   \item{`res_best_eta`}{A numeric vector of length `p` with selected hyperparameter
-#'   \eqn{\eta} values from the \eqn{F_j} estimation step (i.e., estimating \eqn{b_j} and
+#'   \eqn{\eta_j} values from the \eqn{F_j} estimation step (i.e., estimating \eqn{b_j} and
 #'   \eqn{c_j}), chosen by generalized cross-validation.}
 #'   \item{`res_loss_path`}{Optional list of loss values over iterations
 #'   (present only if `eval_loss = TRUE`).}
@@ -60,8 +70,8 @@
 #' network_est <- res_step2$network_est
 #' network_est
 #'
-#' @references
-#' Dai, X., & Li, L. (2022). Kernel ordinary differential equations. Journal of the American Statistical Association, 117(540), 1711-1725.
+#' @references Dai, X., & Li, L. (2022). Kernel ordinary differential equations.
+#' Journal of the American Statistical Association, 117(540), 1711-1725.
 #'
 #' @export
 kernelODE_step2 <- function(Y,

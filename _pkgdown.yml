@@ -1,4 +1,6 @@
 url: https://wenbinwu2001.github.io/ODEinherit/
 template:
   bootstrap: 5
+  math-rendering: mathjax
+
 

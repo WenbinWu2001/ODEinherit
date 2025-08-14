@@ -42,8 +42,6 @@ metadata <- cell_lineage_data$metadata
 var_names <- names(time_series)
 ```
 
-Following conventions, the time series are referred to as "trajectories". Simple code to plot the trajectories (note that in the plot in the paper, these trajectories are centered each to have mean 0)
-
 Following convention, we refer to the time series as “trajectories.”  
 The code below extracts and plots the trajectories for the selected cells.  
 (Note: In the paper, each trajectory is centered to mean 0; here, we omit centering for clearer illustration.)
@@ -96,6 +94,7 @@ Rows correspond to time points, and columns correspond to protein variables.
 The ODE regulatory network for each cell is estimated *separately* using KernelODE.
 
 Before applying KernelODE, we:
+
 - Remove the portion of each trajectory before cell birth.
 - Standardize the observation time points to the interval [0, 1] for each cell.
 - Remove the linear trend in the time series to adjust for time effects.
