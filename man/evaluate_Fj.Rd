@@ -93,7 +93,7 @@ res_step2 <- kernelODE_step2(Y = Y, obs_time = obs_time, yy_smth = res_step1$yy_
 j <- 1  # evaluate Fj for the first variable
 res_eval <- evaluate_Fj(bj = res_step2$res_bj[j],
                         cj = res_step2$res_cj[,j],
-                        interaction_term = F,
+                        interaction_term = FALSE,
                         kernel = kernel,
                         kernel_params = kernel_params,
                         obs_time = obs_time,
@@ -106,7 +106,7 @@ yy_j_est <- res_eval$yy_est
 # plot the evaluated traj
 plot(NA, type = "n",
      xlab = "Time index", ylab = "Value",
-     xlim = c(0,1), ylim = range(c(yy_j_est, Y[,j]), na.rm = T))
+     xlim = c(0,1), ylim = range(c(yy_j_est, Y[,j]), na.rm = TRUE))
 lines(obs_time, Y[,j], lty = 1)
 lines(tt, yy_j_est, lty = 2)
 legend("topright",

@@ -53,7 +53,7 @@
   } else {  # if no network is given, implement non-negative Lasso as described in the paper
     nfold_temp <- floor(nrow(G)/3)
     if (nfold_temp < 3){
-    error("Insufficient samples provided.
+    stop("Insufficient samples provided.
           Need at least 9 time points (>= 3 CV folds, >= 3 samples in each fold) for the Lasso cross-validation (via glmnet::cv.glmnet()).")
     }
 

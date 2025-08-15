@@ -16,7 +16,8 @@ Depends:
     R (>= 3.5)
 LazyData: true
 Imports: 
-    glmnet (>= 4.1-10)
+    parallel,
+    glmnet
 Suggests: 
     knitr,
     rmarkdown,

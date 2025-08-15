@@ -3,7 +3,7 @@ pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
   ODEinherit: ODEinherit.html
-last_built: 2025-08-14T02:25Z
+last_built: 2025-08-15T02:09Z
 urls:
-  reference: https://github.com/WenbinWu2001/ODEinherit/reference
-  article: https://github.com/WenbinWu2001/ODEinherit/articles
+  reference: https://wenbinwu2001.github.io/ODEinherit/reference
+  article: https://wenbinwu2001.github.io/ODEinherit/articles

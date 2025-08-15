@@ -62,7 +62,7 @@ Y_D_full <- sapply(time_series, function(mat){mat[idx_D,]})
 dim(Y_M_full)
 ```
 
-```{r, fig.width=8, fig.height=6, dpi=300}
+```{r, out.width="80%", fig.align="center", dpi=300}
 # plot the trajectories of the first variable
 var_idx <- 1
 yj_M <- Y_M_full[,var_idx]
@@ -190,7 +190,7 @@ kernelODE_pipeline <- function(Y,
 }
 ```
 
-We now apply the pipeline separately to the mother and daughter cells to obtain their respective regulatory networks. This is the most time-consuming step in the pipeline.
+We now apply the pipeline separately to the mother and daughter cells to obtain their respective regulatory networks. The pruning step is the most time-consuming part in the pipeline. As a faster alternative, you can specify `nzero` argument in `ODEinherit::kernelODE_step2()` to directly control the number of regulators selected by the Lasso.
 ```{r}
 # kernel configuration
 kernel <- "matern"
@@ -242,7 +242,7 @@ We now plot the reconstructed daughter trajectories using each network.
 
 **Caveat:** The refitted trajectories returned by `refit_kernel_ODE()` exclude the portion prior to cell birth, as this portion was removed before being passed to the pipeline.
 
-```{r, fig.width=8, fig.height=4, dpi=300}
+```{r, out.width="80%", fig.align="center", dpi=300}
 par(mfrow = c(1,2))
 
 # extract refitted daughter trajectories (both are /daughter/ trajectories!)

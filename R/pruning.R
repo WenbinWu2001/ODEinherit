@@ -636,7 +636,7 @@ prune_network <- function(network_original,
   # identify edges where removing them increases R2 (possible overfitting)
   neg_edge_mat <- which(R2_avg_mat < 0, arr.ind = TRUE)
   if (nrow(neg_edge_mat) > 0) {
-    cat("Note: R2 increases when removing these edges:: ",
+    cat("Note: R2 increases when removing these edges: ",
         paste(neg_edge_mat[,1], neg_edge_mat[,2], sep = "->", collapse = ", "), "\n")
   }
 

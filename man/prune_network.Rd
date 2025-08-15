@@ -70,8 +70,8 @@ A list with components:
 \describe{
 \item{\code{res_prune_path}}{History of pruning steps.}
 \item{\code{network_pruned}}{Final pruned network.}
-\item{\code{R2_avg_mat_pruned}}{\eqn{R^2} contribution per edge in the pruned network, averaged across all samples.}
-\item{\code{R2_multi_arr_pruned}}{Per-sample edge \eqn{R^2} contributions.}
+\item{\code{R2_avg_mat_pruned}}{\eqn{R^2} contribution per edge in the pruned network, averaged across all samples. Set to \code{NULL} if \code{eval_edge_R2_pruned = FALSE}.}
+\item{\code{R2_multi_arr_pruned}}{Per-sample edge \eqn{R^2} contributions. Set to \code{NULL} if \code{eval_edge_R2_pruned = FALSE}.}
 \item{\code{config}}{List of pruning configuration and inputs.}
 }
 }
@@ -83,4 +83,28 @@ The process repeats up to \code{depth} times or until no further edges can be pr
 Applicable only when \code{interaction_term = FALSE}.
 
 Supports pruning using multiple samples (cells) jointly, where edge contributions (\eqn{R^2}) are averaged across samples.
+}
+\examples{
+set.seed(1)
+obs_time <- seq(0, 1, length.out = 10)
+Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
+tt <- seq(0, 1, length.out = 100)
+res_step1 <- kernelODE_step1(Y = Y, obs_time = obs_time, tt = tt)
+
+kernel <- "gaussian"
+kernel_params <- auto_select_kernel_params(kernel = kernel, Y = Y)
+res_step2 <- kernelODE_step2(Y = Y, obs_time = obs_time, yy_smth = res_step1$yy_smth, tt = tt, kernel = kernel, kernel_params = kernel_params)
+
+res_prune <- prune_network(network_original = res_step2$network_est,
+                           depth = 1,
+                           Y_list = list(Y),  # fed in as a list
+                           yy_smth_list = list(res_step1$yy_smth),  # fed in as a list
+                           obs_time_list = list(obs_time),  # fed in as a list
+                           tt = tt,
+                           kernel = kernel,
+                           kernel_params_list = list(kernel_params),  # fed in as a list
+                           interaction_term = FALSE)
+network_pruned <- res_prune$network_pruned
+network_pruned
+
 }
