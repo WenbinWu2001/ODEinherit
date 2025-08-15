@@ -254,15 +254,13 @@ time-consuming step in the pipeline.</p>
 <span>                                      obs_time <span class="op">=</span> <span class="va">obs_time_M</span>,</span>
 <span>                                      kernel <span class="op">=</span> <span class="va">kernel</span>,</span>
 <span>                                      kernel_params <span class="op">=</span> <span class="va">kernel_params</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Note: R2 increases when removing these edges::  1-&gt;1 </span></span>
-<span><span class="co">#&gt; No pruning is done. Network is already pruned to the simplest.</span></span>
+<span><span class="co">#&gt; Note: R2 increases when removing these edges::  1-&gt;1</span></span>
 <span><span class="va">res_KernelODE_D</span> <span class="op">&lt;-</span> <span class="fu">kernelODE_pipeline</span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Y_D</span>,</span>
 <span>                                      obs_time <span class="op">=</span> <span class="va">obs_time_D</span>,</span>
 <span>                                      kernel <span class="op">=</span> <span class="va">kernel</span>,</span>
 <span>                                      kernel_params <span class="op">=</span> <span class="va">kernel_params</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Note: R2 increases when removing these edges::  4-&gt;2, 6-&gt;2, 1-&gt;4, 2-&gt;4, 3-&gt;4, 2-&gt;5, 3-&gt;5, 5-&gt;5, 2-&gt;6, 3-&gt;6, 5-&gt;6 </span></span>
-<span><span class="co">#&gt; Note: R2 increases when removing these edges::  2-&gt;2 </span></span>
-<span><span class="co">#&gt; No pruning is done. Network is already pruned to the simplest.</span></span>
+<span><span class="co">#&gt; Note: R2 increases when removing these edges::  2-&gt;2</span></span>
 <span></span>
 <span><span class="co"># extract results</span></span>
 <span><span class="va">network_est_M</span> <span class="op">&lt;-</span> <span class="va">res_KernelODE_M</span><span class="op">$</span><span class="va">network_est_pruned</span></span>
