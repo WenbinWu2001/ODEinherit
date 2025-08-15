@@ -32,6 +32,7 @@
 #'   \item{`yy_est`}{A numeric vector (length `len`) giving the recovered trajectory on `tt`.}
 #'   \item{`TV_est`}{A numeric scalar giving the total variation \eqn{\int |F_j(t)| \, dt}
 #'     approximated on `tt`.}
+#'   \item{`tt`}{Same as the input `tt`, the grid on which \eqn{F_j} and the trajectory is evaluated.}
 #' }
 #'
 #' @details Given \eqn{b_j}, \eqn{c_j}, and \eqn{\theta_j}, the function
@@ -135,5 +136,6 @@ evaluate_Fj <- function(bj,
   return (list(theta_j0 = theta_j0,  # scalar
                Fj_est = Fj_est,  # vector of length `len`
                yy_est = yy_est,  # vector of length `len`
-               TV_est = TV_est))  # scalar
+               TV_est = TV_est,
+               tt = tt))  # scalar
 }

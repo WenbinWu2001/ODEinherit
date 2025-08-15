@@ -51,7 +51,13 @@
       theta_j[col_idx] <- as.vector(stats::coef(lm_fit)[-1])  # exclude the (zero) intercept
     }
   } else {  # if no network is given, implement non-negative Lasso as described in the paper
-    cv_fit <- glmnet::cv.glmnet(x = G, y = zj, family = "gaussian", alpha = 1, nfolds = min(10, floor(nrow(G)/3)), intercept = FALSE, standardize = TRUE, lower.limits = 0)  # ensure at least 3 obs in a fold
+    nfold_temp <- floor(nrow(G)/3)
+    if (nfold_temp < 3){
+    error("Insufficient samples provided.
+          Need at least 9 time points (>= 3 CV folds, >= 3 samples in each fold) for the Lasso cross-validation (via glmnet::cv.glmnet()).")
+    }
+
+    cv_fit <- glmnet::cv.glmnet(x = G, y = zj, family = "gaussian", alpha = 1, nfolds = min(10, nfold_temp), intercept = FALSE, standardize = TRUE, lower.limits = 0)  # ensure at least 3 obs in a fold
 
     if (is.null(nzero_thres)) {  # no constraint on the number of nonzero coefficients (i.e. number of selected edges)
       # select lambda using the 1se rule

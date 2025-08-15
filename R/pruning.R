@@ -30,10 +30,32 @@
 #' \describe{
 #'   \item{`res_prune_path`}{History of pruning steps.}
 #'   \item{`network_pruned`}{Final pruned network.}
-#'   \item{`R2_avg_mat_pruned`}{\eqn{R^2} contribution per edge in the pruned network, averaged across all samples.}
-#'   \item{`R2_multi_arr_pruned`}{Per-sample edge \eqn{R^2} contributions.}
+#'   \item{`R2_avg_mat_pruned`}{\eqn{R^2} contribution per edge in the pruned network, averaged across all samples. Set to `NULL` if `eval_edge_R2_pruned = FALSE`.}
+#'   \item{`R2_multi_arr_pruned`}{Per-sample edge \eqn{R^2} contributions. Set to `NULL` if `eval_edge_R2_pruned = FALSE`.}
 #'   \item{`config`}{List of pruning configuration and inputs.}
 #' }
+#' @examples
+#' set.seed(1)
+#' obs_time <- seq(0, 1, length.out = 10)
+#' Y <- cbind(sin(2 * pi * obs_time), cos(4 * pi * obs_time)) + 0.1 * matrix(rnorm(20), 10, 2)  # each col is a variable
+#' tt <- seq(0, 1, length.out = 100)
+#' res_step1 <- kernelODE_step1(Y = Y, obs_time = obs_time, tt = tt)
+#'
+#' kernel <- "gaussian"
+#' kernel_params <- auto_select_kernel_params(kernel = kernel, Y = Y)
+#' res_step2 <- kernelODE_step2(Y = Y, obs_time = obs_time, yy_smth = res_step1$yy_smth, tt = tt, kernel = kernel, kernel_params = kernel_params)
+#'
+#' res_prune <- prune_network(network_original = res_step2$network_est,
+#'                            depth = 1,
+#'                            Y_list = list(Y),  # fed in as a list
+#'                            yy_smth_list = list(res_step1$yy_smth),  # fed in as a list
+#'                            obs_time_list = list(obs_time),  # fed in as a list
+#'                            tt = tt,
+#'                            kernel = kernel,
+#'                            kernel_params_list = list(kernel_params),  # fed in as a list
+#'                            interaction_term = FALSE)
+#' network_pruned <- res_prune$network_pruned
+#' network_pruned
 #'
 #' @export
 prune_network <- function(network_original,
@@ -85,7 +107,6 @@ prune_network <- function(network_original,
   len <- dim(yy_smth_list[[1]])[1]
   delta <- 1/len
   obs_idx_list <- lapply(1:K, function(k){.map_to(obs_time_list[[k]], tt)})
-  # Y_smth_list <- lapply(1:K, function(k){yy_smth_list[[k]][obs_idx_list[[k]],]})  # the smoothed trajectories from step 1. It is `yy_smth` evaluated on `obs_time`.
 
   # set depth
   if (is.null(depth)){depth <- p}  # the largest possible depth
@@ -290,7 +311,7 @@ prune_network <- function(network_original,
 
       return (list(R2_j_multi_mat_pruned = R2_j_multi_mat_pruned,
                    R2_j_avg_vec_pruned = R2_j_avg_vec_pruned))
-    }, mc.cores = mc.core)
+    }, mc.cores = mc.cores)
 
     for (j in 1:p){
       res <- res_edge_eval[[j]]
@@ -620,7 +641,7 @@ prune_network <- function(network_original,
   }
 
   # If no pruning is done, pruned_edge_mat is an empty matrix with dimension (0,2).
-  if (nrow(pruned_edge_mat) == 0) {cat("No pruning is done. Network is already pruned to the simplest.\n")}
+  if ((verbose > 0) && (nrow(pruned_edge_mat) == 0)) {cat("No pruning is done. Network is already pruned to the simplest.\n")}
 
   var_pruned <- unique(pruned_edge_mat[,2])
 

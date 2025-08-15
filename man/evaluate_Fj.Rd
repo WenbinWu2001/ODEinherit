@@ -64,6 +64,7 @@ A list with components:
 \item{\code{yy_est}}{A numeric vector (length \code{len}) giving the recovered trajectory on \code{tt}.}
 \item{\code{TV_est}}{A numeric scalar giving the total variation \eqn{\int |F_j(t)| \, dt}
 approximated on \code{tt}.}
+\item{\code{tt}}{Same as the input \code{tt}, the grid on which \eqn{F_j} and the trajectory is evaluated.}
 }
 }
 \description{

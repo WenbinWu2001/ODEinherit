@@ -43,6 +43,9 @@ linear_kernel <- function(y1, y2){
   if (length(y1) != length(y2)) {stop("`y1` and `y2` must have the same length.")}
 
   res <- y1*y2
+
+  if (any(is.na(res) | is.nan(res))) {warning("Computing linear kernel: result contains NA or NaN values.")}
+
   return (res)
 }
 
@@ -60,7 +63,7 @@ polynomial_kernel <- function(y1, y2, intercept, degree){
 
   res <- (y1*y2 + intercept)^degree
 
-  if (any(is.na(res) | is.nan(res))) {stop("Computing polynomial kernel: result contains NA or NaN values.")}
+  if (any(is.na(res) | is.nan(res))) {warning("Computing polynomial kernel: result contains NA or NaN values.")}
 
   return (res)
 }
@@ -77,7 +80,7 @@ gaussian_kernel <- function(y1, y2, bandwidth){
 
   res <- exp(- (y1-y2)^2 / (2 * bandwidth^2))
 
-  if (any(is.na(res) | is.nan(res))) {stop("Computing Gaussian kernel: result contains NA or NaN values.")}
+  if (any(is.na(res) | is.nan(res))) {warning("Computing Gaussian kernel: result contains NA or NaN values.")}
 
   return (res)
 }
@@ -95,7 +98,7 @@ matern_kernel <- function(y1, y2, lengthscale){
 
   res <- (1 + sqrt(3)*abs(y1-y2)/lengthscale) * exp(- sqrt(3)*abs(y1-y2)/lengthscale)
 
-  if (any(is.na(res) | is.nan(res))) {stop("Computing Matern kernel: result contains NA or NaN values.")}
+  if (any(is.na(res) | is.nan(res))) {warning("Computing Matern kernel: result contains NA or NaN values.")}
 
   return (res)
 }
