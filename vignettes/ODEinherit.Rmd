@@ -101,7 +101,7 @@ Before applying KernelODE, we:
 
 In **Step 1** of KernelODE, we fit cubic smoothing splines to obtain smoothed trajectory estimates.  
 In **Step 2**, we estimate ODE regulatory networks within an RKHS modeling framework.  
-For this example, we use a first-order Mat\'ern kernel.  
+For this example, we use a first-order Matern kernel.  
 
 See the original [KernelODE paper](https://arxiv.org/abs/2008.02915) for more details on the algorithm.
 
@@ -240,7 +240,7 @@ KODE_refit_DtoD <- ODEinherit::refit_kernel_ODE(Y = Y_D,  # target: daughter's o
 
 We now plot the reconstructed daughter trajectories using each network.
 
-**Caveat:** The refitted trajectories returned by `refit_kernel_ODE()` exclude the portion prior to cell birth, as this portion was removed before being passed to the pipeline.
+**Caveat:** The refitted trajectories returned by `refit_kernel_ODE()` follow the same format as the observed trajectories fed into the pipeline (i.e., with the pre–birth portion removed).
 
 ```{r, out.width="80%", fig.align="center", dpi=300}
 par(mfrow = c(1,2))
