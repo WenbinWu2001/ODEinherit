@@ -157,7 +157,7 @@ effects.</li>
 splines to obtain smoothed trajectory estimates.<br>
 In <strong>Step 2</strong>, we estimate ODE regulatory networks within
 an RKHS modeling framework.<br>
-For this example, we use a first-order Mat'ern kernel.</p>
+For this example, we use a first-order Matern kernel.</p>
 <p>See the original <a href="https://arxiv.org/abs/2008.02915" class="external-link">KernelODE
 paper</a> for more details on the algorithm.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -298,8 +298,9 @@ Goodness-of-fit is quantified using a heuristic <span class="math inline">\(R^2\
 <p>We now plot the reconstructed daughter trajectories using each
 network.</p>
 <p><strong>Caveat:</strong> The refitted trajectories returned by
-<code><a href="../reference/refit_kernel_ODE.html">refit_kernel_ODE()</a></code> exclude the portion prior to cell birth,
-as this portion was removed before being passed to the pipeline.</p>
+<code><a href="../reference/refit_kernel_ODE.html">refit_kernel_ODE()</a></code> follow the same format as the observed
+trajectories fed into the pipeline (i.e., with the pre–birth portion
+removed).</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
